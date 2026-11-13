@@ -59,8 +59,12 @@ async function tokenRequest(params) {
     headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
     body: new URLSearchParams({ client_id: store.clientId, ...params }),
   });
-  const data = await res.json();
-  if (!res.ok) throw new Error(data.error_description || data.error || 'Błąd tokena');
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) {
+    const err = new Error(data.error_description || data.error || 'Błąd tokena');
+    err.permanent = res.status === 400 || res.status === 401; // np. invalid_grant: token faktycznie nieważny
+    throw err;
+  }
   tokens = {
     access: data.access_token,
     refresh: data.refresh_token || (tokens && tokens.refresh),
@@ -70,18 +74,21 @@ async function tokenRequest(params) {
   saveStore();
 }
 
+let refreshing = null; // jedno odświeżenie naraz (start aplikacji woła API równolegle)
 async function ensureToken() {
   if (!tokens) return false;
   if (tokens.access && Date.now() < tokens.expires) return true;
-  try {
-    await tokenRequest({ grant_type: 'refresh_token', refresh_token: tokens.refresh });
-    return true;
-  } catch {
-    tokens = null;
-    delete store.refresh;
-    saveStore();
-    return false;
+  if (!refreshing) {
+    refreshing = tokenRequest({ grant_type: 'refresh_token', refresh_token: tokens.refresh })
+      .then(() => true)
+      .catch((e) => {
+        // wylogowujemy tylko, gdy token jest naprawdę nieważny; brak sieci to stan chwilowy
+        if (e && e.permanent) { tokens = null; delete store.refresh; saveStore(); }
+        return false;
+      })
+      .finally(() => { refreshing = null; });
   }
+  return refreshing;
 }
 
 let loginServer = null;
@@ -142,22 +149,27 @@ function login(clientId) {
 
 // ---------- Spotify API ----------
 async function api(method, endpoint, body, retry = true) {
-  if (!(await ensureToken())) return { status: 401, data: null };
-  const res = await fetch('https://api.spotify.com/v1' + endpoint, {
-    method,
-    headers: {
-      Authorization: 'Bearer ' + tokens.access,
-      ...(body ? { 'Content-Type': 'application/json' } : {}),
-    },
-    body: body ? JSON.stringify(body) : undefined,
-  });
+  if (!(await ensureToken())) return { status: tokens ? 0 : 401, data: null }; // 0 = chwilowy brak połączenia, 401 = wylogowany
+  let res;
+  try {
+    res = await fetch('https://api.spotify.com/v1' + endpoint, {
+      method,
+      headers: {
+        Authorization: 'Bearer ' + tokens.access,
+        ...(body ? { 'Content-Type': 'application/json' } : {}),
+      },
+      body: body ? JSON.stringify(body) : undefined,
+    });
+  } catch {
+    return { status: 0, data: null };
+  }
   if (res.status === 401 && retry) { tokens.access = null; return api(method, endpoint, body, false); }
   let data = null;
   if (res.status !== 204) { try { data = await res.json(); } catch {} }
   return { status: res.status, data };
 }
 
-const errMsg = (r) => (r.data && r.data.error && r.data.error.message) || `Błąd ${r.status}`;
+const errMsg = (r) => (r.data && r.data.error && r.data.error.message) || (r.status === 0 ? 'Brak połączenia z internetem' : `Błąd ${r.status}`);
 
 function simplifyState(d) {
   if (!d || !d.item) return null;

@@ -305,3 +305,5 @@ html[data-layout="compact"] #plList {
 html[data-layout="compact"] #plList::-webkit-scrollbar { display: none; }
 html[data-layout="compact"] #plName { margin-top: 0; height: 14px; line-height: 14px; font-size: 10.5px; }
 
+
+.pl .ph.retry { background: rgba(var(--fg-rgb), .14); border: 1px dashed rgba(var(--fg-rgb), .4); font-size: 20px; font-weight: 400; color: var(--text); }

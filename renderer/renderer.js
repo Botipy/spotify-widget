@@ -249,7 +249,8 @@ function setPlaylists(open) {
   $('player').classList.toggle('pl-mode', open);   // playlisty zastępują playera, okno bez zmian
   $('plBtn').classList.toggle('on', open);
   $('plBtn').title = open ? 'Wróć do playera' : 'Playlisty';
-  if (open) { $('filter').focus(); if (playlists.length <= 1) loadPlaylists(); }
+  // odśwież listę, gdy się nie wczytała albo jest starsza niż 3 minuty (nowe playlisty pojawiają się same)
+  if (open) { $('filter').focus(); if (!PREVIEW && (!plLoaded || Date.now() - plAt > 3 * 60 * 1000)) loadPlaylists(); }
   else { $('filter').value = ''; $('filter').blur(); renderPlaylists(); }
 }
 $('plBtn').onclick = () => setPlaylists(!plOpen);
@@ -260,11 +261,21 @@ $('filter').addEventListener('keydown', (e) => {
   if (uri) { playUri(uri); $('filter').value = ''; renderPlaylists(); }
 });
 
+// Stan ładowania listy: przy błędzie (np. brak sieci tuż po starcie systemu) ponawiamy sami
+let plLoaded = false, plAt = 0, plErr = '', plRetry = null, plAttempt = 0, plLoading = false;
 async function loadPlaylists() {
-  const r = await sp.playlists();
+  if (plLoading) return;
+  plLoading = true;
+  let r;
+  try { r = await sp.playlists(); } catch { r = { ok: false, items: [], error: 'Brak połączenia' }; }
+  plLoading = false;
   // DJ (AI) nie jest zwracany przez API listy playlist, więc przypinamy go ręcznie
   playlists = [LIKED, DJ, ...(r.items || []).filter((p) => p.uri !== DJ.uri)];
-  if (!r.ok && r.error) flash('Playlisty: ' + r.error);
+  plLoaded = !!r.ok;
+  plErr = r.ok ? '' : (r.error || 'nieznany błąd');
+  clearTimeout(plRetry);
+  if (r.ok) { plAt = Date.now(); plAttempt = 0; }
+  else { const delays = [3000, 8000, 20000, 60000]; plRetry = setTimeout(loadPlaylists, delays[Math.min(plAttempt++, delays.length - 1)]); }
   renderPlaylists();
 }
 
@@ -315,6 +326,16 @@ function renderPlaylists() {
     el.onclick = () => playUri(p.uri);
     box.appendChild(el);
   }
+  if (!plLoaded && !q) { // lista nie wczytała się: kafelek „ponów” zamiast cichego braku playlist
+    const el = document.createElement('div');
+    el.className = 'pl';
+    const ph = Object.assign(document.createElement('div'), { className: 'ph retry', textContent: '↻' });
+    el.append(ph);
+    el.onmouseenter = () => { $('plName').textContent = `Nie udało się pobrać playlist (${plErr}). Kliknij, aby ponowić`; $('plName').classList.add('on'); };
+    el.onmouseleave = () => { $('plName').textContent = NAME_HINT; $('plName').classList.remove('on'); };
+    el.onclick = () => { plAttempt = 0; loadPlaylists(); };
+    box.appendChild(el);
+  }
   markCurrent();
 }
 
@@ -338,6 +359,7 @@ function startPreview() {
       return { id: 'p' + i, name: 'Playlista ' + (i + 1), uri: 'x' + i, image: cv.toDataURL() };
     });
     playlists.unshift(LIKED);
+    plLoaded = true;
     $('player').classList.add('pl-mode');
     renderPlaylists();
     return;
