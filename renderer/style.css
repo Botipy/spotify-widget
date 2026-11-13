@@ -243,64 +243,65 @@ code {
 
 
 /* =====================================================================
-   UKŁAD MINIMALISTYCZNY (data-layout="compact"): poziomy pasek
-   [okładka] [tytuł ........ ikony] / [pasek postępu] / [kontrolki]
+   UKŁAD MINIMALISTYCZNY (data-layout="compact"), okno 340x112:
+   [okładka]  tytuł ..................... [ikony]
+              wykonawca (cała szerokość)
+              0:41 ━━━━━━━━●━━━━━━━━ 2:37
+              [losowo]  ⏮  ⏯  ⏭  [głośność]
    ===================================================================== */
-html[data-layout="compact"] { --tile: 40px; --tile-gap: 8px; --tile-radius: 8px; }
+html[data-layout="compact"] { --tile: 42px; --tile-gap: 8px; --tile-radius: 9px; }
 html[data-layout="compact"] section { padding: 8px 10px 8px 22px; }
 
 html[data-layout="compact"] #player:not(.pl-mode) {
-  display: grid; grid-template-columns: 64px 1fr; grid-template-rows: 22px 14px 1fr;
-  column-gap: 10px; row-gap: 2px; align-content: center;
+  display: grid; grid-template-columns: 76px 1fr; grid-template-rows: 20px 15px 14px 1fr;
+  column-gap: 12px; row-gap: 3px;
 }
 html[data-layout="compact"] #player:not(.pl-mode) .top,
-html[data-layout="compact"] #player:not(.pl-mode) .now { display: contents; }
+html[data-layout="compact"] #player:not(.pl-mode) .now,
+html[data-layout="compact"] #player:not(.pl-mode) .meta { display: contents; }
 html[data-layout="compact"] #player:not(.pl-mode) .brand,
 html[data-layout="compact"] #player:not(.pl-mode) .eq,
 html[data-layout="compact"] #player:not(.pl-mode) .spacer,
 html[data-layout="compact"] #player:not(.pl-mode) #filter { display: none; }
 
 /* uchwyt do przesuwania: pionowy pasek po lewej */
-html[data-layout="compact"] #player .grip {
-  position: absolute; left: 2px; top: 50%; transform: translateY(-50%); width: 18px; height: 44px; margin: 0;
-}
-/* przyciski w prawym górnym rogu */
-html[data-layout="compact"] #player .top .ic { position: absolute; top: 5px; width: 22px; height: 22px; border-radius: 7px; }
+html[data-layout="compact"] #player .grip { position: absolute; left: 2px; top: 50%; transform: translateY(-50%); width: 18px; height: 44px; margin: 0; }
+/* ikony w prawym górnym rogu: te same miejsca w odtwarzaczu i w trybie playlist */
+html[data-layout="compact"] #player .top .ic { position: absolute; top: 6px; width: 22px; height: 22px; border-radius: 7px; }
 html[data-layout="compact"] #player .top .ic svg { width: 14px; height: 14px; }
 html[data-layout="compact"] #player #close2 { right: 6px; }
 html[data-layout="compact"] #player #setBtn { right: 30px; }
 html[data-layout="compact"] #player #plBtn { right: 54px; }
 
-html[data-layout="compact"] .art-wrap { grid-column: 1; grid-row: 1 / 4; align-self: center; width: 64px; height: 64px; -webkit-app-region: drag; }
-html[data-layout="compact"] .art, html[data-layout="compact"] .art-ph { border-radius: 11px; }
-html[data-layout="compact"] .meta {
-  grid-column: 2; grid-row: 1; display: flex; align-items: baseline; gap: 8px; min-width: 0; padding-right: 80px; -webkit-app-region: no-drag;
+html[data-layout="compact"] .art-wrap { grid-column: 1; grid-row: 1 / 5; align-self: center; width: 76px; height: 76px; -webkit-app-region: drag; }
+html[data-layout="compact"] .art, html[data-layout="compact"] .art-ph { border-radius: 12px; }
+html[data-layout="compact"] .title { grid-column: 2; grid-row: 1; align-self: center; margin-right: 78px; font-size: 14.5px; -webkit-app-region: no-drag; } /* tytuł NIE jest uchwytem: długi tekst wystawałby pod ikony i blokował kliknięcia */
+html[data-layout="compact"] .artist {
+  grid-column: 2; grid-row: 2; align-self: center; margin: 0; font-size: 12px; display: block;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; -webkit-app-region: drag;
 }
-html[data-layout="compact"] .title { font-size: 14px; flex: 0 1 auto; min-width: 0; }
-html[data-layout="compact"] .artist { font-size: 11.5px; margin-top: 0; flex: 0 100 auto; min-width: 0; max-width: 100%; display: block; }
-html[data-layout="compact"] .progress { grid-column: 2; grid-row: 2; margin-top: 0; }
-html[data-layout="compact"] .controls { grid-column: 2; grid-row: 3; margin-top: 0; }
-html[data-layout="compact"] .play { width: 34px; height: 34px; margin: 0 1px; }
-html[data-layout="compact"] .play svg { width: 19px; height: 19px; }
-html[data-layout="compact"] .ic.big { width: 30px; height: 30px; }
-html[data-layout="compact"] .ic.big svg { width: 19px; height: 19px; }
+html[data-layout="compact"] .progress { grid-column: 2; grid-row: 3; margin: 0; }
+html[data-layout="compact"] .controls { grid-column: 2; grid-row: 4; margin: 0; align-self: center; }
+html[data-layout="compact"] .controls .center { gap: 8px; }
+html[data-layout="compact"] .play { width: 38px; height: 38px; margin: 0; }
+html[data-layout="compact"] .play svg { width: 21px; height: 21px; }
+html[data-layout="compact"] .ic.big { width: 32px; height: 32px; }
+html[data-layout="compact"] .ic.big svg { width: 21px; height: 21px; }
 html[data-layout="compact"] .controls .ic { width: 26px; height: 26px; }
-html[data-layout="compact"] #vol { width: 34px; }
+html[data-layout="compact"] #vol { width: 30px; }
 html[data-layout="compact"] .toast { bottom: 4px; padding: 3px 10px; font-size: 10.5px; }
 
 /* playlisty w układzie minimalistycznym: jeden poziomy rząd okładek (kółko myszy przewija) */
-html[data-layout="compact"] #plList {
-  display: flex; flex-direction: row; overflow-x: auto; overflow-y: hidden; gap: var(--tile-gap);
-  margin-right: 0; padding: 4px 2px 4px 2px; align-items: center; flex: 0 0 auto; justify-content: flex-start;
-}
-html[data-layout="compact"] #plList::-webkit-scrollbar { height: 4px; width: auto; }
-html[data-layout="compact"] #plPanel { justify-content: center; }
-html[data-layout="compact"] #plName { margin-top: 2px; }
-
-html[data-layout="compact"] .title, html[data-layout="compact"] .artist { -webkit-app-region: drag; }
-
-
-/* w trybie playlist wyszukiwarka zostawia miejsce na ikony, ktore nie zmieniaja pozycji */
+html[data-layout="compact"] #player.pl-mode .top { margin-bottom: 3px; }
 html[data-layout="compact"] #player.pl-mode #filter { margin: 0 82px 0 0; }
-html[data-layout="compact"] #player.pl-mode .top { padding-left: 0; }
+html[data-layout="compact"] #plPanel { justify-content: flex-start; }
+html[data-layout="compact"] #plList {
+  display: flex; flex-direction: row; flex: 0 0 auto; align-items: center; justify-content: flex-start;
+  overflow-x: auto; overflow-y: hidden; gap: var(--tile-gap); margin: 0 -10px 0 0; padding: 5px 14px 6px 3px;
+  scrollbar-width: none;
+  -webkit-mask-image: linear-gradient(90deg, #000 0, #000 calc(100% - 18px), transparent);
+  mask-image: linear-gradient(90deg, #000 0, #000 calc(100% - 18px), transparent);
+}
+html[data-layout="compact"] #plList::-webkit-scrollbar { display: none; }
+html[data-layout="compact"] #plName { margin-top: 0; height: 14px; line-height: 14px; font-size: 10.5px; }
 

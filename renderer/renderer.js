@@ -349,7 +349,7 @@ function startPreview() {
   x.fillStyle = g; x.fillRect(0, 0, 200, 200);
   x.fillStyle = 'rgba(255,255,255,.28)'; x.beginPath(); x.arc(100, 100, 56, 0, 7); x.fill();
   x.fillStyle = 'rgba(0,0,0,.25)'; x.beginPath(); x.arc(100, 100, 18, 0, 7); x.fill();
-  st = { playing: true, title: 'Przykładowy utwór', artist: 'Wykonawca, Gość', art: c.toDataURL(), duration: 157000, progress: 41000, shuffle: true, volume: 60, device: null, context: null };
+  st = { playing: true, title: qs.get('title') || 'Przykładowy utwór', artist: qs.get('artist') || 'Wykonawca, Gość', art: c.toDataURL(), duration: 157000, progress: 41000, shuffle: true, volume: 60, device: null, context: null };
   stAt = Date.now();
   setInterval(() => { stAt = Date.now(); }, 150); // zamrożony postęp
   render();

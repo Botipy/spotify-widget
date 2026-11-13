@@ -198,17 +198,17 @@ html[data-theme="win98"][data-layout="compact"] #card::before {
   background: linear-gradient(90deg, #000080, #1084d0); color: #fff; font-size: 11px; font-weight: 700;
 }
 html[data-theme="win98"][data-layout="compact"] section { padding-top: 20px; }
-html[data-theme="win98"][data-layout="compact"] #player:not(.pl-mode) { grid-template-rows: 18px 12px 1fr; row-gap: 1px; }
+html[data-theme="win98"][data-layout="compact"] #player:not(.pl-mode) { grid-template-columns: 60px 1fr; grid-template-rows: 18px 14px 12px 1fr; row-gap: 1px; column-gap: 10px; }
 html[data-theme="win98"][data-layout="compact"] #player .top .ic { top: 1px; width: 15px; height: 13px; }
 html[data-theme="win98"][data-layout="compact"] #player .top .ic svg { width: 9px; height: 9px; }
 html[data-theme="win98"][data-layout="compact"] #player #close2 { right: 3px; }
 html[data-theme="win98"][data-layout="compact"] #player #setBtn { right: 21px; }
 html[data-theme="win98"][data-layout="compact"] #player #plBtn { right: 39px; }
 html[data-theme="win98"][data-layout="compact"] #player .grip { color: #666; }
-html[data-theme="win98"][data-layout="compact"] .meta { padding-right: 4px; }
-html[data-theme="win98"][data-layout="compact"] .art-wrap { width: 56px; height: 56px; }
-html[data-theme="win98"][data-layout="compact"] .play { width: 36px; height: 28px; }
-html[data-theme="win98"][data-layout="compact"] .ic.big { width: 30px; height: 26px; }
+html[data-theme="win98"][data-layout="compact"] .title { margin-right: 0; }
+html[data-theme="win98"][data-layout="compact"] .art-wrap { width: 60px; height: 60px; }
+html[data-theme="win98"][data-layout="compact"] .play { width: 40px; height: 30px; }
+html[data-theme="win98"][data-layout="compact"] .ic.big { width: 32px; height: 28px; }
 
 /* ---------- WINAMP (metal + zielony wyświetlacz LCD) ---------- */
 html[data-theme="winamp"] {
@@ -224,7 +224,12 @@ html[data-theme="winamp"] .now { background: #040704; border: 1px solid #55555f;
 html[data-theme="winamp"] .art, html[data-theme="winamp"] .art-ph { border-radius: 4px; border: 1px solid #55555f; box-shadow: none; }
 html[data-theme="winamp"] .title { color: #5cff2e; text-shadow: 0 0 8px rgba(92, 255, 46, .55); font-family: 'Cascadia Mono', Consolas, monospace; font-size: 14px; }
 html[data-theme="winamp"] .artist { color: #8fd47d; font-family: 'Cascadia Mono', Consolas, monospace; font-size: 11px; }
-html[data-theme="winamp"][data-layout="compact"] .meta { background: #040704; border: 1px solid #55555f; border-radius: 5px; padding: 2px 80px 2px 8px; box-shadow: inset 0 0 10px rgba(0, 0, 0, .9); }
+html[data-theme="winamp"][data-layout="compact"] #player:not(.pl-mode)::before {
+  content: ''; position: absolute; left: 110px; right: 10px; top: 6px; height: 43px; z-index: 0; pointer-events: none;
+  background: #040704; border: 1px solid #55555f; border-radius: 6px; box-shadow: inset 0 0 10px rgba(0, 0, 0, .9);
+}
+html[data-theme="winamp"][data-layout="compact"] .title { margin-left: 8px; z-index: 1; }
+html[data-theme="winamp"][data-layout="compact"] .artist { margin-left: 8px; margin-right: 8px; z-index: 1; }
 html[data-theme="winamp"] .progress { color: #5cff2e; font-family: 'Cascadia Mono', Consolas, monospace; }
 html[data-theme="winamp"] #track { height: 8px; border-radius: 4px; background: #060906; box-shadow: inset 0 1px 3px #000, 0 0 0 1px #55555f; }
 html[data-theme="winamp"] #bar:hover #track, html[data-theme="winamp"] #bar.scrub #track { height: 8px; }
@@ -235,7 +240,7 @@ html[data-theme="winamp"] #shuffle.on { color: #5cff2e; }
 html[data-theme="winamp"] .play { border-radius: 7px; width: 44px; height: 34px; background: linear-gradient(180deg, #666672, #2c2c33); box-shadow: inset 0 1px 0 #9a9aa6, 0 1px 4px rgba(0, 0, 0, .8), 0 0 0 1px #0a0a0c; }
 html[data-theme="winamp"] .play:hover { transform: none; filter: brightness(1.15); }
 html[data-theme="winamp"] .play svg { filter: drop-shadow(0 0 4px rgba(92, 255, 46, .8)); }
-html[data-theme="winamp"][data-layout="compact"] .play { width: 38px; height: 28px; }
+html[data-theme="winamp"][data-layout="compact"] .play { width: 40px; height: 30px; }
 html[data-theme="winamp"] #vol { height: 6px; border-radius: 3px; background: linear-gradient(90deg, #5cff2e var(--v, 50%), #060906 var(--v, 50%)); box-shadow: 0 0 0 1px #55555f; }
 html[data-theme="winamp"] #filter { background: #040704; border-color: #55555f; color: #5cff2e; }
 html[data-theme="winamp"] .toast { background: #040704; border-color: #55555f; color: #5cff2e; }
@@ -342,3 +347,8 @@ html[data-theme="sakura"] .toast.bad { color: #c0392b; }
 html[data-theme="sakura"] .top .ic { background: rgba(255, 244, 248, .78); border-radius: 50%; box-shadow: 0 1px 4px rgba(176, 70, 110, .25); }
 html[data-theme="sakura"] .top .ic:hover { background: #fff; }
 html[data-theme="sakura"] .top .ic.on { background: rgba(255, 214, 230, .95); }
+
+
+/* Win98 minimalistyczny + playlisty: pasek tytułu rysuje karta, wiersz z wyszukiwarką jest zwykły */
+html[data-theme="win98"][data-layout="compact"] #player.pl-mode .top { background: none; margin: 0 0 4px; padding: 0; height: 20px; }
+html[data-theme="win98"][data-layout="compact"] #player.pl-mode #filter { margin-right: 0; }

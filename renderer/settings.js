@@ -2,7 +2,7 @@
   ['liquid', 'Liquid Glass'], ['retro', 'Retro'], ['terminal', 'Terminal'], ['gameboy', 'Game Boy'], ['neon', 'Neon'],
   ['vaporwave', 'Vaporwave'], ['win98', 'Win98'], ['winamp', 'Winamp'], ['glass', 'Glass'], ['y2k', 'Y2K'], ['sakura', 'Sakura'],
 ];
-const SIZES = { standard: { w: 300, h: 168 }, compact: { w: 340, h: 98 } };
+const SIZES = { standard: { w: 300, h: 168 }, compact: { w: 340, h: 112 } };
 
 let cur = { theme: 'liquid', layout: 'standard' };
 let mode = 'player'; // tylko podgląd: odtwarzacz / playlisty
@@ -27,7 +27,10 @@ function build() {
     const ifr = document.createElement('iframe');
     ifr.width = sz.w; ifr.height = sz.h;
     ifr.style.transform = `scale(${scale})`;
-    ifr.src = `index.html?preview=1&theme=${id}&layout=${cur.layout}&mode=${mode}`;
+    const extra = new URLSearchParams(location.search); // ?title=..&artist=.. (do testów długich tekstów)
+    ifr.src = `index.html?preview=1&theme=${id}&layout=${cur.layout}&mode=${mode}` +
+      (extra.get('title') ? '&title=' + encodeURIComponent(extra.get('title')) : '') +
+      (extra.get('artist') ? '&artist=' + encodeURIComponent(extra.get('artist')) : '');
     ifr.tabIndex = -1;
     frame.appendChild(ifr);
     stage.appendChild(frame);
@@ -64,4 +67,5 @@ sp.onSettings((s) => {
   build();
   markSelection();
 })();
+
 

@@ -18,7 +18,7 @@ const SCOPES = [
 ].join(' ');
 
 // Dwa układy okna: standardowy (większy) i minimalistyczny (niski, poziomy pasek)
-const SIZES = { standard: { w: 300, h: 168 }, compact: { w: 340, h: 98 } };
+const SIZES = { standard: { w: 300, h: 168 }, compact: { w: 340, h: 112 } };
 const THEMES = ['liquid', 'retro', 'terminal', 'gameboy', 'neon', 'vaporwave', 'win98', 'winamp', 'glass', 'y2k', 'sakura'];
 const getSettings = () => ({ theme: 'liquid', layout: 'standard', ...((typeof store !== 'undefined' && store.settings) || {}) });
 const curSize = () => SIZES[getSettings().layout] || SIZES.standard;
@@ -379,4 +379,5 @@ if (!app.requestSingleInstanceLock()) {
   });
   app.on('window-all-closed', () => app.quit());
 }
+
 
