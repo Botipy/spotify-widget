@@ -1,0 +1,40 @@
+{
+  "name": "spotify-widget",
+  "productName": "Spotify Widget",
+  "version": "1.0.0",
+  "description": "Minimalistyczna nakładka Spotify na pulpit",
+  "main": "main.js",
+  "author": "Botipy",
+  "scripts": {
+    "start": "electron .",
+    "dist": "electron-builder --win"
+  },
+  "build": {
+    "appId": "com.botipy.spotifywidget",
+    "productName": "Spotify Widget",
+    "files": [
+      "main.js",
+      "preload.js",
+      "renderer/**",
+      "assets/**"
+    ],
+    "win": {
+      "target": [
+        { "target": "nsis", "arch": ["x64"] }
+      ],
+      "icon": "assets/icon.ico",
+      "artifactName": "Spotify-Widget-Setup-${version}.exe"
+    },
+    "nsis": {
+      "oneClick": true,
+      "perMachine": false,
+      "runAfterFinish": true,
+      "shortcutName": "Spotify Widget",
+      "deleteAppDataOnUninstall": false
+    }
+  },
+  "devDependencies": {
+    "electron": "^45.3.1",
+    "electron-builder": "^26.18.0"
+  }
+}

@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="pl">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; img-src 'self' https: data:; style-src 'self' 'unsafe-inline'">
+  <title>Spotify Widget</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <svg width="0" height="0" style="position:absolute" aria-hidden="true">
+    <defs>
+      <symbol id="i-prev" viewBox="0 0 24 24"><path d="M6 6h2v12H6zm3.5 6l8.5 6V6z"/></symbol>
+      <symbol id="i-next" viewBox="0 0 24 24"><path d="M6 18l8.5-6L6 6v12zM16 6v12h2V6h-2z"/></symbol>
+      <symbol id="i-play" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></symbol>
+      <symbol id="i-pause" viewBox="0 0 24 24"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></symbol>
+      <symbol id="i-shuffle" viewBox="0 0 24 24"><path d="M10.59 9.17L5.41 4 4 5.41l5.17 5.17 1.42-1.41zM14.5 4l2.04 2.04L4 18.59 5.41 20 17.96 7.46 20 9.5V4h-5.5zm.33 9.41l-1.41 1.41 3.13 3.13L14.5 20H20v-5.5l-2.04 2.04-3.13-3.13z"/></symbol>
+      <symbol id="i-list" viewBox="0 0 24 24"><path d="M3 13h2v-2H3v2zm0 4h2v-2H3v2zm0-8h2V7H3v2zm4 4h14v-2H7v2zm0 4h14v-2H7v2zM7 7v2h14V7H7z"/></symbol>
+      <symbol id="i-close" viewBox="0 0 24 24"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></symbol>
+      <symbol id="i-vol" viewBox="0 0 24 24"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3A4.5 4.5 0 0 0 14 7.97v8.05c1.48-.73 2.5-2.25 2.5-4.02z"/></symbol>
+      <symbol id="i-back" viewBox="0 0 24 24"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/></symbol>
+      <symbol id="i-note" viewBox="0 0 24 24"><path d="M12 3v10.55A4 4 0 1 0 14 17V7h4V3h-6z"/></symbol>
+    </defs>
+  </svg>
+
+  <div id="card">
+    <div id="bg"></div>
+    <div id="shade"></div>
+
+    <!-- Logowanie -->
+    <section id="login" hidden>
+      <div class="top">
+        <span class="brand drag"><span class="dot"></span>Spotify Widget</span>
+        <span class="spacer drag"></span>
+        <button class="ic nodrag" id="close1" title="Ukryj"><svg><use href="#i-close"/></svg></button>
+      </div>
+      <p class="hint">Wklej <b>Client ID</b> z <a href="#" id="devlink">developer.spotify.com</a> i dodaj tam Redirect URI:</p>
+      <code id="redirect" title="Kliknij, żeby skopiować"></code>
+      <div class="row">
+        <input id="clientId" class="nodrag" placeholder="Client ID" spellcheck="false" autocomplete="off">
+        <button id="loginBtn" class="primary nodrag">Zaloguj</button>
+      </div>
+      <div id="loginErr" class="err"></div>
+    </section>
+
+    <!-- Player -->
+    <section id="player" hidden>
+      <div class="top">
+        <span class="brand drag"><span class="dot"></span>Spotify</span>
+        <span class="eq" id="eq"><i></i><i></i><i></i><i></i></span>
+        <input id="filter" class="nodrag" placeholder="Szukaj lub wklej link Spotify + Enter" spellcheck="false" autocomplete="off">
+        <span class="spacer drag"></span>
+        <button class="ic nodrag" id="plBtn" title="Playlisty"><svg class="s-list"><use href="#i-list"/></svg><svg class="s-back"><use href="#i-back"/></svg></button>
+        <button class="ic nodrag" id="close2" title="Ukryj do zasobnika"><svg><use href="#i-close"/></svg></button>
+      </div>
+
+      <div class="now">
+        <div class="art-wrap"><img id="art" class="art" alt=""><div class="art-ph"><svg><use href="#i-note"/></svg></div></div>
+        <div class="meta">
+          <div id="title" class="title"><span>Nic nie gra</span></div>
+          <div id="artist" class="artist">Włącz coś albo wybierz playlistę</div>
+        </div>
+      </div>
+
+      <div class="progress nodrag">
+        <span id="tcur">0:00</span>
+        <div id="bar"><div id="track"><div id="fill"></div></div></div>
+        <span id="tdur">0:00</span>
+      </div>
+
+      <div class="controls nodrag">
+        <div class="side left"><button class="ic" id="shuffle" title="Losowo"><svg><use href="#i-shuffle"/></svg></button></div>
+        <div class="center">
+          <button class="ic big" id="prev" title="Poprzedni"><svg><use href="#i-prev"/></svg></button>
+          <button class="play" id="toggle" title="Odtwórz / pauza">
+            <svg class="p-play"><use href="#i-play"/></svg>
+            <svg class="p-pause"><use href="#i-pause"/></svg>
+          </button>
+          <button class="ic big" id="next" title="Następny"><svg><use href="#i-next"/></svg></button>
+        </div>
+        <div class="side right"><div class="volbox"><svg><use href="#i-vol"/></svg><input id="vol" type="range" min="0" max="100" title="Głośność"></div></div>
+      </div>
+
+      <div id="plPanel"><div id="plList"></div></div>
+    </section>
+
+    <div id="status" class="toast"></div>
+  </div>
+  <script src="renderer.js"></script>
+</body>
+</html>
