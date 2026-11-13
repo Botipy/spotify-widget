@@ -1,11 +1,11 @@
-const { app, BrowserWindow, Tray, Menu, ipcMain, nativeImage, shell, screen, safeStorage } = require('electron');
+﻿const { app, BrowserWindow, Tray, Menu, ipcMain, nativeImage, shell, screen, safeStorage } = require('electron');
 const path = require('path');
 const fs = require('fs');
 const http = require('http');
 const crypto = require('crypto');
 
 // Stały folder danych (ustawienia + logowanie), niezależny od nazwy produktu i od instalatora
-app.setPath('userData', path.join(app.getPath('appData'), 'spotify-widget'));
+app.setPath('userData', process.env.SW_DATA_DIR || path.join(app.getPath('appData'), 'spotify-widget'));
 
 const REDIRECT_PORT = 8888;
 const REDIRECT_URI = `http://127.0.0.1:${REDIRECT_PORT}/callback`;
@@ -17,9 +17,11 @@ const SCOPES = [
   'playlist-read-collaborative',
 ].join(' ');
 
-const W = 300;
-const H_COMPACT = 168;
-const H_EXPANDED = 168; // playlisty zastępują playera w tym samym oknie
+// Dwa układy okna: standardowy (większy) i minimalistyczny (niski, poziomy pasek)
+const SIZES = { standard: { w: 300, h: 168 }, compact: { w: 340, h: 98 } };
+const THEMES = ['liquid', 'retro', 'terminal', 'gameboy', 'neon', 'vaporwave', 'win98', 'winamp', 'glass', 'y2k', 'sakura'];
+const getSettings = () => ({ theme: 'liquid', layout: 'standard', ...((typeof store !== 'undefined' && store.settings) || {}) });
+const curSize = () => SIZES[getSettings().layout] || SIZES.standard;
 
 let win, tray;
 let store = {};
@@ -241,15 +243,44 @@ ipcMain.handle('playlists:play', async (_e, openUri) => {
 });
 
 // ---------- Okno ----------
-ipcMain.handle('win:expand', (_e, expanded) => {
-  if (!win) return;
+function applyLayoutSize() {
+  if (!win || win.isDestroyed()) return;
   const b = win.getBounds();
-  const h = expanded ? H_EXPANDED : H_COMPACT;
+  const s = curSize();
   const area = screen.getDisplayMatching(b).workArea;
-  let y = b.y;
-  if (y + h > area.y + area.height) y = area.y + area.height - h; // nie wychodź poza ekran
-  win.setBounds({ x: b.x, y, width: W, height: h });
+  const x = Math.max(area.x, Math.min(b.x, area.x + area.width - s.w));
+  const y = Math.max(area.y, Math.min(b.y, area.y + area.height - s.h)); // nie wychodź poza ekran
+  win.setBounds({ x, y, width: s.w, height: s.h });
+}
+
+// ---------- Ustawienia wyglądu (preset + układ) ----------
+ipcMain.handle('settings:get', () => getSettings());
+ipcMain.handle('settings:set', (_e, patch) => {
+  const cur = getSettings();
+  const next = { ...cur };
+  if (patch && THEMES.includes(patch.theme)) next.theme = patch.theme;
+  if (patch && SIZES[patch.layout]) next.layout = patch.layout;
+  store.settings = next;
+  saveStore();
+  if (next.layout !== cur.layout) applyLayoutSize();
+  for (const w of BrowserWindow.getAllWindows()) if (!w.isDestroyed()) w.webContents.send('settings:changed', next);
+  return next;
 });
+ipcMain.handle('settings:open', () => openSettings());
+
+let settingsWin = null;
+function openSettings() {
+  if (settingsWin && !settingsWin.isDestroyed()) { settingsWin.show(); settingsWin.focus(); return; }
+  settingsWin = new BrowserWindow({
+    width: 720, height: 740, minWidth: 560, minHeight: 480,
+    title: 'Spotify Widget – Wygląd', backgroundColor: '#141416', autoHideMenuBar: true,
+    icon: path.join(__dirname, 'assets', 'icon.png'),
+    webPreferences: { preload: path.join(__dirname, 'preload.js'), contextIsolation: true, nodeIntegration: false },
+  });
+  settingsWin.setMenuBarVisibility(false);
+  settingsWin.loadFile(path.join(__dirname, 'renderer', 'settings.html'));
+  settingsWin.on('closed', () => { settingsWin = null; });
+}
 ipcMain.handle('win:hide', () => win && win.hide());
 ipcMain.handle('win:quit', () => app.quit());
 ipcMain.handle('win:openUrl', (_e, url) => { if (/^https:\/\//.test(url)) shell.openExternal(url); });
@@ -263,18 +294,20 @@ function setOnTop(on) {
 
 function startPosition() {
   const b = store.bounds;
+  const s = curSize();
   if (b) {
-    const area = screen.getDisplayMatching({ x: b.x, y: b.y, width: W, height: H_COMPACT }).workArea;
+    const area = screen.getDisplayMatching({ x: b.x, y: b.y, width: s.w, height: s.h }).workArea;
     if (b.x >= area.x - 50 && b.x < area.x + area.width && b.y >= area.y - 50 && b.y < area.y + area.height) return b;
   }
   const area = screen.getPrimaryDisplay().workArea;
-  return { x: area.x + area.width - W - 20, y: area.y + area.height - H_COMPACT - 20 };
+  return { x: area.x + area.width - s.w - 20, y: area.y + area.height - s.h - 20 };
 }
 
 function createWindow() {
   const pos = startPosition();
+  const s = curSize();
   win = new BrowserWindow({
-    x: pos.x, y: pos.y, width: W, height: H_COMPACT,
+    x: pos.x, y: pos.y, width: s.w, height: s.h,
     frame: false, transparent: true, resizable: false, maximizable: false,
     skipTaskbar: true, hasShadow: false, show: false,
     alwaysOnTop: store.onTop !== false,
@@ -315,6 +348,7 @@ function buildTrayMenu() {
   if (!tray) return;
   tray.setContextMenu(Menu.buildFromTemplate([
     { label: 'Pokaż / ukryj panel', click: () => (win.isVisible() ? win.hide() : win.show()) },
+    { label: 'Wygląd i ustawienia…', click: () => openSettings() },
     { label: 'Zawsze na wierzchu', type: 'checkbox', checked: store.onTop !== false, click: (m) => setOnTop(m.checked) },
     { label: 'Uruchamiaj z Windowsem', type: 'checkbox', checked: app.getLoginItemSettings().openAtLogin,
       click: (m) => app.setLoginItemSettings({ openAtLogin: m.checked }) },
@@ -345,3 +379,4 @@ if (!app.requestSingleInstanceLock()) {
   });
   app.on('window-all-closed', () => app.quit());
 }
+

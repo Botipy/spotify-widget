@@ -1,5 +1,34 @@
 const $ = (id) => document.getElementById(id);
 
+// ---------- Tryb podglądu (iframe w oknie ustawień, bez API) ----------
+const qs = new URLSearchParams(location.search);
+const PREVIEW = qs.get('preview') === '1';
+if (!window.sp) {
+  const noop = async () => ({});
+  window.sp = {
+    authStatus: async () => ({ loggedIn: false, redirectUri: '', clientId: '' }), login: noop, logout: noop,
+    onLoggedOut() {}, onUpdate() {}, onSettings() {},
+    getSettings: async () => ({ theme: 'liquid', layout: 'standard' }), setSettings: noop, openSettings: noop,
+    state: async () => ({ auth: true, state: null }), toggle: noop, next: noop, prev: noop, shuffle: noop, seek: noop, volume: noop,
+    playlists: async () => ({ ok: true, items: [] }), playPlaylist: noop, hide: noop, quit: noop, openUrl: noop,
+  };
+}
+
+// ---------- Wygląd: preset (data-theme) + układ (data-layout) ----------
+const COVER_ACCENT = new Set(['liquid', 'glass']); // te presety biorą kolor akcentu z okładki
+function applyLook(s) {
+  const root = document.documentElement;
+  root.dataset.theme = s.theme;
+  root.dataset.layout = s.layout;
+  if (!COVER_ACCENT.has(s.theme)) {
+    root.style.removeProperty('--accent');
+    root.style.removeProperty('--accent-rgb');
+  } else if (typeof st !== 'undefined' && st && st.art) {
+    accentFrom(st.art);
+  }
+  requestAnimationFrame(() => { if (typeof st !== 'undefined' && st) setTitle(st.title, true); }); // przelicz przewijanie tytułu po zmianie układu
+}
+
 let st = null;            // ostatni stan z API
 let stAt = 0;             // kiedy go dostaliśmy (do interpolacji postępu)
 let playlists = [];
@@ -31,6 +60,7 @@ function flash(msg, good) {
 
 // ---------- Kolor akcentu z okładki ----------
 function setAccent(r, g, b) {
+  if (!COVER_ACCENT.has(document.documentElement.dataset.theme)) return; // inne presety mają stały akcent
   const root = document.documentElement.style;
   root.setProperty('--accent', `rgb(${r}, ${g}, ${b})`);
   root.setProperty('--accent-rgb', `${r}, ${g}, ${b}`);
@@ -64,10 +94,10 @@ function accentFrom(src) {
 }
 
 // ---------- Tytuł: przewijanie, gdy się nie mieści ----------
-function setTitle(text) {
+function setTitle(text, force) {
   const t = $('title');
   const span = t.firstElementChild;
-  if (span.textContent === text) return;
+  if (!force && span.textContent === text) return;
   span.textContent = text;
   t.classList.remove('marq', 'fits');
   requestAnimationFrame(() => {
@@ -79,6 +109,7 @@ function setTitle(text) {
 
 // ---------- Logowanie ----------
 async function init() {
+  applyLook(await sp.getSettings());
   const a = await sp.authStatus();
   $('redirect').textContent = a.redirectUri;
   $('clientId').value = a.clientId;
@@ -89,6 +120,8 @@ $('redirect').onclick = () => { navigator.clipboard.writeText($('redirect').text
 $('devlink').onclick = (e) => { e.preventDefault(); sp.openUrl('https://developer.spotify.com/dashboard'); };
 $('close1').onclick = () => sp.hide();
 $('close2').onclick = () => sp.hide();
+$('setBtn').onclick = () => sp.openSettings();
+sp.onSettings(applyLook);
 
 $('loginBtn').onclick = async () => {
   const id = $('clientId').value.trim();
@@ -254,6 +287,14 @@ async function playUri(uri) {
   setTimeout(poll, 500);
 }
 
+const NAME_HINT = 'Najedź na okładkę, aby zobaczyć nazwę';
+// w układzie minimalistycznym lista to poziomy rząd: kółko myszy przewija w bok
+$('plList').addEventListener('wheel', (e) => {
+  if (document.documentElement.dataset.layout !== 'compact') return;
+  e.preventDefault();
+  $('plList').scrollLeft += e.deltaY + e.deltaX;
+}, { passive: false });
+
 function renderPlaylists() {
   const q = $('filter').value.trim().toLowerCase();
   const list = playlists.filter((p) => p.name.toLowerCase().includes(q));
@@ -268,9 +309,9 @@ function renderPlaylists() {
     if (p.dj) img.textContent = 'DJ';
     if (p.liked) { img.className = 'ph liked'; img.textContent = '♥'; }
     if (p.liked) el.dataset.liked = '1';
-    const name = document.createElement('span');
-    name.textContent = p.name;
-    el.append(img, name);
+    el.append(img);
+    el.onmouseenter = () => { $('plName').textContent = p.name; $('plName').classList.add('on'); };
+    el.onmouseleave = () => { $('plName').textContent = NAME_HINT; $('plName').classList.remove('on'); };
     el.onclick = () => playUri(p.uri);
     box.appendChild(el);
   }
@@ -283,4 +324,35 @@ function markCurrent() {
 
 $('filter').oninput = renderPlaylists;
 
-init();
+// Podgląd presetu w oknie ustawień: sztuczny stan odtwarzania, bez API
+function startPreview() {
+  applyLook({ theme: qs.get('theme') || 'liquid', layout: qs.get('layout') || 'standard' });
+  document.body.classList.add('preview');
+  show('player');
+  if (qs.get('mode') === 'playlists') {
+    const colors = [['#ff3d81', '#7b2ff7'], ['#1ed760', '#0b3d2e'], ['#ffb347', '#ff5e62'], ['#36d1dc', '#5b86e5'], ['#f857a6', '#ff5858'], ['#8e2de2', '#4a00e0'], ['#f7971e', '#ffd200'], ['#00c6ff', '#0072ff']];
+    playlists = colors.map((c, i) => {
+      const cv = document.createElement('canvas'); cv.width = cv.height = 64;
+      const x = cv.getContext('2d'); const g = x.createLinearGradient(0, 0, 64, 64);
+      g.addColorStop(0, c[0]); g.addColorStop(1, c[1]); x.fillStyle = g; x.fillRect(0, 0, 64, 64);
+      return { id: 'p' + i, name: 'Playlista ' + (i + 1), uri: 'x' + i, image: cv.toDataURL() };
+    });
+    playlists.unshift(LIKED);
+    $('player').classList.add('pl-mode');
+    renderPlaylists();
+    return;
+  }
+  const c = document.createElement('canvas'); c.width = c.height = 200;
+  const x = c.getContext('2d');
+  const g = x.createLinearGradient(0, 0, 200, 200);
+  g.addColorStop(0, '#ff3d81'); g.addColorStop(.55, '#7b2ff7'); g.addColorStop(1, '#1b1464');
+  x.fillStyle = g; x.fillRect(0, 0, 200, 200);
+  x.fillStyle = 'rgba(255,255,255,.28)'; x.beginPath(); x.arc(100, 100, 56, 0, 7); x.fill();
+  x.fillStyle = 'rgba(0,0,0,.25)'; x.beginPath(); x.arc(100, 100, 18, 0, 7); x.fill();
+  st = { playing: true, title: 'Przykładowy utwór', artist: 'Wykonawca, Gość', art: c.toDataURL(), duration: 157000, progress: 41000, shuffle: true, volume: 60, device: null, context: null };
+  stAt = Date.now();
+  setInterval(() => { stAt = Date.now(); }, 150); // zamrożony postęp
+  render();
+}
+
+if (PREVIEW) startPreview(); else init();

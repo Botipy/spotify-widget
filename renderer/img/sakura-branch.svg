@@ -1,0 +1,40 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="-14 -14 228 158">
+  <defs>
+    <radialGradient id="pg" cx="50%" cy="85%" r="95%">
+      <stop offset="0" stop-color="#ee82a8"/>
+      <stop offset=".5" stop-color="#f8b4cb"/>
+      <stop offset="1" stop-color="#fde6ee"/>
+    </radialGradient>
+    <g id="p"><path d="M0 0C-9-3-12-16-5-22Q0-18 5-22C12-16 9-3 0 0Z" fill="url(#pg)" stroke="#e58aaa" stroke-width=".55"/></g>
+    <g id="b">
+      <use href="#p"/><use href="#p" transform="rotate(72)"/><use href="#p" transform="rotate(144)"/><use href="#p" transform="rotate(216)"/><use href="#p" transform="rotate(288)"/>
+      <circle r="3.4" fill="#f09ab8"/>
+      <g stroke="#c24570" stroke-width=".75" stroke-linecap="round">
+        <path d="M0 0V-8"/><path d="M0 0V-8" transform="rotate(50)"/><path d="M0 0V-8" transform="rotate(100)"/><path d="M0 0V-8" transform="rotate(150)"/><path d="M0 0V-8" transform="rotate(205)"/><path d="M0 0V-8" transform="rotate(255)"/><path d="M0 0V-8" transform="rotate(305)"/>
+      </g>
+      <g fill="#c24570"><circle cy="-8.6" r=".95"/><circle cy="-8.6" r=".95" transform="rotate(50)"/><circle cy="-8.6" r=".95" transform="rotate(100)"/><circle cy="-8.6" r=".95" transform="rotate(150)"/><circle cy="-8.6" r=".95" transform="rotate(205)"/><circle cy="-8.6" r=".95" transform="rotate(255)"/><circle cy="-8.6" r=".95" transform="rotate(305)"/></g>
+    </g>
+  </defs>
+  <g fill="none" stroke="#7f4257" stroke-linecap="round">
+    <path d="M202 9C166 21 140 34 112 56C90 74 58 98 6 122" stroke-width="3.4"/>
+    <path d="M152 29C149 50 141 62 127 74" stroke-width="2"/>
+    <path d="M112 56C100 51 86 53 73 62" stroke-width="2"/>
+    <path d="M182 16C186 30 180 41 168 49" stroke-width="1.8"/>
+    <path d="M86 78C80 90 70 98 58 102" stroke-width="1.8"/>
+  </g>
+  <g fill="#c25a7c">
+    <ellipse cx="127" cy="76" rx="2.6" ry="3.4" transform="rotate(-25 127 76)"/>
+    <ellipse cx="72" cy="63" rx="2.4" ry="3.2" transform="rotate(60 72 63)"/>
+    <ellipse cx="167" cy="51" rx="2.2" ry="3" transform="rotate(-40 167 51)"/>
+    <ellipse cx="57" cy="103" rx="2.2" ry="3" transform="rotate(70 57 103)"/>
+    <ellipse cx="195" cy="40" rx="2" ry="2.8"/>
+  </g>
+  <use href="#b" transform="translate(172 24) rotate(8) scale(1.05)"/>
+  <use href="#b" transform="translate(144 47) rotate(-24) scale(1.18)"/>
+  <use href="#b" transform="translate(116 69) rotate(36) scale(.95)"/>
+  <use href="#b" transform="translate(84 64) rotate(0) scale(.8)"/>
+  <use href="#b" transform="translate(186 46) rotate(30) scale(.7)"/>
+  <use href="#b" transform="translate(62 98) rotate(14) scale(.82)"/>
+  <use href="#b" transform="translate(128 92) rotate(-12) scale(.62)"/>
+  <use href="#b" transform="translate(30 112) rotate(20) scale(.6)"/>
+</svg>

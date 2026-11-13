@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="-26 -26 52 52">
+  <defs>
+    <radialGradient id="pg" cx="50%" cy="85%" r="95%">
+      <stop offset="0" stop-color="#ee82a8"/>
+      <stop offset=".5" stop-color="#f8b4cb"/>
+      <stop offset="1" stop-color="#fde6ee"/>
+    </radialGradient>
+    <g id="p"><path d="M0 0C-9-3-12-16-5-22Q0-18 5-22C12-16 9-3 0 0Z" fill="url(#pg)" stroke="#e58aaa" stroke-width=".6"/></g>
+  </defs>
+  <use href="#p"/><use href="#p" transform="rotate(72)"/><use href="#p" transform="rotate(144)"/><use href="#p" transform="rotate(216)"/><use href="#p" transform="rotate(288)"/>
+  <circle r="3.6" fill="#f09ab8"/>
+  <g stroke="#c24570" stroke-width=".8" stroke-linecap="round">
+    <path d="M0 0V-8"/><path d="M0 0V-8" transform="rotate(50)"/><path d="M0 0V-8" transform="rotate(100)"/><path d="M0 0V-8" transform="rotate(150)"/><path d="M0 0V-8" transform="rotate(205)"/><path d="M0 0V-8" transform="rotate(255)"/><path d="M0 0V-8" transform="rotate(305)"/>
+  </g>
+  <g fill="#c24570"><circle cy="-8.8" r="1"/><circle cy="-8.8" r="1" transform="rotate(50)"/><circle cy="-8.8" r="1" transform="rotate(100)"/><circle cy="-8.8" r="1" transform="rotate(150)"/><circle cy="-8.8" r="1" transform="rotate(205)"/><circle cy="-8.8" r="1" transform="rotate(255)"/><circle cy="-8.8" r="1" transform="rotate(305)"/></g>
+</svg>

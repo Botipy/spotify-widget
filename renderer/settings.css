@@ -1,0 +1,33 @@
+:root { color-scheme: dark; }
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { background: #131316; color: #f2f2f5; font-family: 'Segoe UI Variable Text', 'Segoe UI', system-ui, sans-serif; -webkit-font-smoothing: antialiased; }
+body { padding: 22px 24px 28px; min-height: 100vh; }
+
+header h1 { font-size: 22px; font-weight: 700; letter-spacing: -.01em; }
+header p { margin-top: 4px; font-size: 13px; color: #9a9aa6; }
+
+.controls { display: flex; flex-wrap: wrap; gap: 14px 28px; margin: 18px 0 20px; }
+.group { display: flex; align-items: center; gap: 10px; }
+.label { font-size: 11px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: #8a8a96; }
+.seg { display: inline-flex; padding: 3px; border-radius: 11px; background: #202026; border: 1px solid #2c2c34; }
+.seg button { border: 0; background: none; color: #b4b4c0; font: inherit; font-size: 13px; font-weight: 600; padding: 7px 14px; border-radius: 8px; cursor: pointer; transition: background .15s, color .15s; }
+.seg button:hover { color: #fff; }
+.seg button.on { background: #1ed760; color: #04210d; }
+
+#grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(330px, 1fr)); gap: 16px; }
+.card {
+  position: relative; border: 2px solid #26262e; background: #1a1a1f; border-radius: 16px; padding: 14px 14px 12px;
+  cursor: pointer; transition: border-color .15s, transform .15s, background .15s; text-align: left; font: inherit; color: inherit;
+}
+.card:hover { transform: translateY(-2px); background: #1f1f26; border-color: #3a3a46; }
+.card.sel { border-color: #1ed760; box-shadow: 0 0 0 3px rgba(30, 215, 96, .18); }
+.stage {
+  display: flex; align-items: center; justify-content: center; height: 190px; border-radius: 10px; overflow: hidden;
+  background: repeating-conic-gradient(#222228 0% 25%, #1d1d22 0% 50%) 0 0 / 16px 16px;
+}
+.frame { position: relative; flex-shrink: 0; }
+.frame iframe { position: absolute; left: 0; top: 0; border: 0; transform-origin: top left; pointer-events: none; background: transparent; }
+.meta { display: flex; align-items: center; justify-content: space-between; margin-top: 10px; }
+.name { font-size: 14px; font-weight: 700; }
+.badge { font-size: 11px; font-weight: 700; color: #04210d; background: #1ed760; border-radius: 99px; padding: 2px 9px; opacity: 0; transition: opacity .15s; }
+.card.sel .badge { opacity: 1; }
