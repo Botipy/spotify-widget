@@ -216,7 +216,14 @@ ipcMain.handle('playlists:get', async () => {
   }
   return { ok: true, items: out };
 });
-ipcMain.handle('playlists:play', async (_e, uri) => {
+const LIKED_URI = 'spotify:collection:tracks';
+ipcMain.handle('playlists:play', async (_e, openUri) => {
+  let uri = openUri;
+  if (openUri === LIKED_URI) {
+    // Polubione utwory = kontekst "spotify:user:<id>:collection"
+    const me = await api('GET', '/me');
+    if (me.data && me.data.id) uri = `spotify:user:${me.data.id}:collection`;
+  }
   let r = await api('PUT', '/me/player/play', { context_uri: uri });
   if (r.status === 404) {
     // brak aktywnego urządzenia: przełącz na pierwsze dostępne (np. Spotify na PC)
@@ -225,9 +232,9 @@ ipcMain.handle('playlists:play', async (_e, uri) => {
     if (!dev) return { ok: false, error: 'Brak urządzenia. Uruchom Spotify na komputerze.' };
     r = await api('PUT', `/me/player/play?device_id=${dev.id}`, { context_uri: uri });
   }
-  if (r.status >= 300 && /^spotify:(playlist|album|artist|show):[A-Za-z0-9]+$/.test(uri)) {
+  if (r.status >= 300 && (openUri === LIKED_URI || /^spotify:(playlist|album|artist|show):[A-Za-z0-9]+$/.test(openUri))) {
     // API odmówiło (np. DJ / playlisty algorytmiczne) - otwórz w aplikacji Spotify
-    shell.openExternal(uri);
+    shell.openExternal(openUri);
     return { ok: true, opened: true };
   }
   return r.status < 300 ? { ok: true } : { ok: false, error: errMsg(r) };

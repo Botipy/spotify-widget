@@ -211,11 +211,12 @@ $('filter').addEventListener('keydown', (e) => {
 async function loadPlaylists() {
   const r = await sp.playlists();
   // DJ (AI) nie jest zwracany przez API listy playlist, więc przypinamy go ręcznie
-  playlists = [DJ, ...(r.items || []).filter((p) => p.uri !== DJ.uri)];
+  playlists = [LIKED, DJ, ...(r.items || []).filter((p) => p.uri !== DJ.uri)];
   if (!r.ok && r.error) flash('Playlisty: ' + r.error);
   renderPlaylists();
 }
 
+const LIKED = { id: 'liked', name: 'Polubione utwory', uri: 'spotify:collection:tracks', liked: true };
 const DJ = { id: 'dj', name: 'DJ (Spotify AI)', uri: 'spotify:playlist:37i9dQZF1EYkqdzj48dyYq', dj: true };
 
 // Wklejony link/URI Spotify -> context URI (playlist/album/artist/show)
@@ -246,6 +247,8 @@ function renderPlaylists() {
     el.dataset.uri = p.uri;
     const img = p.image ? Object.assign(document.createElement('img'), { src: p.image }) : Object.assign(document.createElement('div'), { className: 'ph' + (p.dj ? ' dj' : '') });
     if (p.dj) img.textContent = 'DJ';
+    if (p.liked) { img.className = 'ph liked'; img.textContent = '♥'; }
+    if (p.liked) el.dataset.liked = '1';
     const name = document.createElement('span');
     name.textContent = p.name;
     el.append(img, name);
@@ -256,7 +259,7 @@ function renderPlaylists() {
 }
 
 function markCurrent() {
-  document.querySelectorAll('.pl').forEach((el) => el.classList.toggle('cur', !!st && el.dataset.uri === st.context));
+  document.querySelectorAll('.pl').forEach((el) => el.classList.toggle('cur', !!st && !!st.context && (el.dataset.uri === st.context || (!!el.dataset.liked && /:collection$/.test(st.context)))));
 }
 
 $('filter').oninput = renderPlaylists;
