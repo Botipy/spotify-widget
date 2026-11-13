@@ -438,8 +438,8 @@ async function playTrack(i) {
   const t = trItems[i], pl = trPl;
   if (!t || !pl) return;
   flash('');
-  // Polubione: odtwarzamy wskazane utwory po kolei (do 50 od klikniętego); playlista: kontekst + start od utworu
-  const opts = pl.uri === LIKED.uri ? { uris: trItems.slice(i, i + 50).map((x) => x.uri) } : { offsetUri: t.uri };
+  // Kontekst + start od wybranego utworu (też dla Polubionych). Wariant z listą uris Spotify potwierdza (204), ale nic nie gra.
+  const opts = { offsetUri: t.uri };
   setPlaylists(false); // wracamy do playera
   const r = await sp.playPlaylist(pl.uri, opts);
   if (!r.ok) flash(r.error);
