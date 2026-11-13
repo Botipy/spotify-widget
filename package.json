@@ -7,7 +7,7 @@
   "author": "Botipy",
   "scripts": {
     "start": "electron .",
-    "dist": "electron-builder --win"
+    "dist": "electron-builder --win --publish never"
   },
   "build": {
     "appId": "com.botipy.spotifywidget",
