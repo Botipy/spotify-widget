@@ -156,7 +156,7 @@ function render() {
 }
 
 function tick() {
-  if (!st) return;
+  if (!st || scrubbing) return;
   const pos = Math.min(st.duration, st.progress + (st.playing ? Date.now() - stAt : 0));
   $('tcur').textContent = fmt(pos);
   $('fill').style.width = (st.duration ? (pos / st.duration) * 100 : 0) + '%';
@@ -177,13 +177,31 @@ $('next').onclick = () => act(sp.next);
 $('prev').onclick = () => act(sp.prev);
 $('shuffle').onclick = () => { if (st) act(sp.shuffle, !st.shuffle); };
 
-$('bar').onclick = (e) => {
-  if (!st) return;
+// Przewijanie: klik albo przeciąganie po pasku (wysyłamy seek dopiero po puszczeniu)
+let scrubbing = false;
+function scrubTo(e, commit) {
   const rect = $('bar').getBoundingClientRect();
-  const ms = ((e.clientX - rect.left) / rect.width) * st.duration;
-  st.progress = ms; stAt = Date.now(); tick();
-  act(sp.seek, ms);
-};
+  const f = Math.min(1, Math.max(0, (e.clientX - rect.left) / rect.width));
+  const ms = Math.min(f * st.duration, Math.max(0, st.duration - 500));
+  $('fill').style.width = (f * 100) + '%';
+  $('tcur').textContent = fmt(ms);
+  if (commit) { st.progress = ms; stAt = Date.now(); act(sp.seek, ms); }
+}
+$('bar').addEventListener('pointerdown', (e) => {
+  if (!st || e.button !== 0) return;
+  scrubbing = true;
+  $('bar').classList.add('scrub');
+  $('bar').setPointerCapture(e.pointerId);
+  scrubTo(e, false);
+});
+$('bar').addEventListener('pointermove', (e) => { if (scrubbing && st) scrubTo(e, false); });
+$('bar').addEventListener('pointerup', (e) => {
+  if (!scrubbing) return;
+  scrubbing = false;
+  $('bar').classList.remove('scrub');
+  if (st) scrubTo(e, true);
+});
+$('bar').addEventListener('pointercancel', () => { scrubbing = false; $('bar').classList.remove('scrub'); });
 
 $('vol').oninput = () => {
   volDragging = true;

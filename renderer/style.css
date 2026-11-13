@@ -123,7 +123,9 @@ button { background: none; border: none; color: #fff; cursor: pointer; font-fami
   content: ''; position: absolute; right: -5px; top: 50%; width: 10px; height: 10px; border-radius: 50%;
   background: #fff; transform: translateY(-50%) scale(0); transition: transform .15s; box-shadow: 0 2px 6px rgba(0,0,0,.5);
 }
-#bar:hover #fill::after { transform: translateY(-50%) scale(1); }
+#bar:hover #fill::after, #bar.scrub #fill::after { transform: translateY(-50%) scale(1); }
+#bar.scrub #track { height: 5px; }
+#bar { touch-action: none; }
 
 /* ---------- kontrolki ---------- */
 .controls { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; margin-top: 1px; }
