@@ -352,3 +352,53 @@ html[data-theme="sakura"] .top .ic.on { background: rgba(255, 214, 230, .95); }
 /* Win98 minimalistyczny + playlisty: pasek tytułu rysuje karta, wiersz z wyszukiwarką jest zwykły */
 html[data-theme="win98"][data-layout="compact"] #player.pl-mode .top { background: none; margin: 0 0 4px; padding: 0; height: 20px; }
 html[data-theme="win98"][data-layout="compact"] #player.pl-mode #filter { margin-right: 0; }
+
+/* ---------- HIGANBANA (czerń, czerwona poświata, czerwone pajęcze lilie) ---------- */
+html[data-theme="higanbana"] {
+  --accent: #e5262b; --accent-rgb: 229, 38, 43; --fg-rgb: 255, 255, 255;
+  --text: #fff; --text-dim: rgba(255, 255, 255, .7); --card-bg: #050505; --card-radius: 22px; --tile-radius: 10px;
+  --play-bg: radial-gradient(circle at 50% 25%, #f4504f, #b30e14 72%); --play-fg: #fff;
+}
+html[data-theme="higanbana"] #card {
+  background: #050505; border: 1.5px solid #e5262b;
+  box-shadow: inset 0 0 14px rgba(229, 38, 43, .75), inset 0 0 38px rgba(229, 38, 43, .2);
+}
+html[data-theme="higanbana"] #bg { display: none; }
+html[data-theme="higanbana"] #shade { background: url(img/lycoris-bottom.svg) center bottom / 100% 86px no-repeat; }
+html[data-layout="compact"][data-theme="higanbana"] #shade { background: url(img/lycoris-bottom.svg) center bottom / 100% 58px no-repeat; }
+html[data-theme="higanbana"] .brand { color: #fff; font-weight: 800; letter-spacing: .16em; }
+html[data-theme="higanbana"] .brand .dot { width: 15px; height: 15px; border-radius: 0; box-shadow: none; background: url(img/spotify-mark-light.svg) center / contain no-repeat; }
+html[data-theme="higanbana"] .eq i { background: #fff; }
+html[data-theme="higanbana"] .grip { color: rgba(255, 255, 255, .85); }
+html[data-theme="higanbana"] .art, html[data-theme="higanbana"] .art-ph { border-radius: 14px; box-shadow: 0 0 0 1px rgba(255, 255, 255, .22), 0 8px 18px rgba(0, 0, 0, .7); }
+html[data-theme="higanbana"] .art-ph { background: linear-gradient(135deg, #1b1b1b, #0a0a0a); color: rgba(255, 255, 255, .3); }
+html[data-theme="higanbana"] .title { font-weight: 800; letter-spacing: -.01em; }
+html[data-theme="higanbana"] .artist { color: rgba(255, 255, 255, .62); }
+html[data-theme="higanbana"] #track { height: 4px; background: rgba(255, 255, 255, .22); }
+html[data-theme="higanbana"] #bar:hover #track, html[data-theme="higanbana"] #bar.scrub #track { height: 5px; }
+html[data-theme="higanbana"] #fill { background: linear-gradient(90deg, #8f0b10, #ff3a3a); box-shadow: 0 0 8px rgba(229, 38, 43, .8); }
+html[data-theme="higanbana"] #fill::after { width: 30px; height: 30px; right: -15px; border-radius: 0; box-shadow: none; background: url(img/lycoris-thumb.svg) center / contain no-repeat; transform: translateY(-50%) scale(1); }
+html[data-theme="higanbana"] .play { box-shadow: 0 0 18px rgba(229, 38, 43, .6), inset 0 1px 0 rgba(255, 255, 255, .35); }
+html[data-theme="higanbana"] .play:hover { box-shadow: 0 0 26px rgba(229, 38, 43, .85), inset 0 1px 0 rgba(255, 255, 255, .35); }
+html[data-theme="higanbana"] .ic.on { color: #ff4d4f; background: rgba(229, 38, 43, .2); }
+html[data-theme="higanbana"] #vol { background: linear-gradient(90deg, #e5262b var(--v, 50%), rgba(255, 255, 255, .22) var(--v, 50%)); }
+html[data-theme="higanbana"] #filter { border-color: rgba(229, 38, 43, .5); background: rgba(255, 255, 255, .06); }
+html[data-theme="higanbana"] #filter:focus { border-color: #ff4d4f; }
+html[data-theme="higanbana"] .pl.cur { box-shadow: 0 0 0 2px #e5262b, 0 0 12px rgba(229, 38, 43, .7); }
+html[data-theme="higanbana"] .toast { background: #120505; border-color: rgba(229, 38, 43, .6); }
+
+/* serduszko: te same style co przycisk losowo w presetach z własnymi przyciskami */
+html[data-theme="win98"] #heart { border-radius: 0; background: #c0c0c0; color: #000; box-shadow: var(--bevel-out); }
+html[data-theme="win98"] #heart:active, html[data-theme="win98"] #heart.on { box-shadow: var(--bevel-in); background: #c0c0c0; color: #c00000; transform: none; }
+html[data-theme="winamp"] #heart { border-radius: 5px; background: linear-gradient(180deg, #5a5a64, #2c2c33); color: #e8e8f0; box-shadow: inset 0 1px 0 #8a8a96, 0 1px 3px rgba(0, 0, 0, .7), 0 0 0 1px #0a0a0c; }
+html[data-theme="winamp"] #heart.on { color: #5cff2e; }
+html[data-theme="y2k"] #heart { background: radial-gradient(circle at 50% 18%, #fff, #c9d1de 70%, #9ea8ba); color: #1b2433; border-radius: 50%; box-shadow: 0 1px 3px rgba(60, 72, 92, .5), 0 0 0 1px #8b97a9; }
+html[data-theme="y2k"] #heart.on { background: radial-gradient(circle at 50% 18%, #ffd0dc, #ff5f8a); color: #7a0a2a; }
+
+/* Higanbana: przyciski przy rogach mają ciemne podkłady, żeby były czytelne na tle kwiatów */
+html[data-theme="higanbana"] .controls .side .ic { background: rgba(0, 0, 0, .62); box-shadow: 0 0 0 1px rgba(229, 38, 43, .35); color: #fff; }
+html[data-theme="higanbana"] .controls .side .ic.on { color: #ff4d4f; }
+html[data-theme="higanbana"] .volbox { background: rgba(0, 0, 0, .62); border-radius: 12px; padding: 4px 8px; box-shadow: 0 0 0 1px rgba(229, 38, 43, .3); }
+
+html[data-layout="compact"][data-theme="higanbana"] .volbox { padding: 3px 5px; gap: 3px; }
+html[data-layout="compact"][data-theme="higanbana"] #vol { width: 24px; }

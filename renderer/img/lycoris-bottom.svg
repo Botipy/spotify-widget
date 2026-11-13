@@ -1,0 +1,48 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 340 90" preserveAspectRatio="xMidYMax slice">
+  <defs>
+    <radialGradient id="pg" gradientUnits="userSpaceOnUse" cx="0" cy="0" r="46">
+      <stop offset="0" stop-color="#ff4a36"/><stop offset=".55" stop-color="#e3171e"/><stop offset="1" stop-color="#8c0810"/>
+    </radialGradient>
+    <radialGradient id="hole" cx=".5" cy=".5" r=".5"><stop offset="0" stop-color="#050505" stop-opacity=".94"/><stop offset=".6" stop-color="#050505" stop-opacity=".7"/><stop offset="1" stop-color="#050505" stop-opacity="0"/></radialGradient>
+    <linearGradient id="fade" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#050505" stop-opacity="0"/><stop offset="1" stop-color="#050505" stop-opacity=".78"/>
+    </linearGradient>
+    <g id="pt"><path d="M0 0C8-10 26-20 46-8C36-10 22-5 12 2C8 3 3 2 0 0Z" fill="url(#pg)" stroke="#6e060c" stroke-width=".45"/></g>
+    <g id="st"><path d="M0 0C4-16 20-34 40-34" fill="none" stroke="#ff4a3a" stroke-width=".95" stroke-linecap="round"/><circle cx="40" cy="-34" r="1.8" fill="#ffb4a0"/></g>
+    <g id="L">
+      <use href="#pt"/><use href="#pt" transform="rotate(60)"/><use href="#pt" transform="rotate(120)"/>
+      <use href="#pt" transform="rotate(180)"/><use href="#pt" transform="rotate(240)"/><use href="#pt" transform="rotate(300)"/>
+      <use href="#st" transform="rotate(-20)"/><use href="#st" transform="rotate(32)"/><use href="#st" transform="rotate(84)"/>
+      <use href="#st" transform="rotate(136)"/><use href="#st" transform="rotate(188)"/><use href="#st" transform="rotate(240)"/><use href="#st" transform="rotate(292)"/>
+      <circle r="3.2" fill="#7a0b10"/>
+    </g>
+  </defs>
+
+  <!-- łodygi -->
+  <g fill="none" stroke="#1c2a12" stroke-linecap="round" stroke-width="2.2">
+    <path d="M62 62C58 74 60 84 56 92"/><path d="M212 66C216 76 210 86 214 92"/><path d="M300 52C296 66 302 80 298 92"/>
+    <path d="M18 44C22 62 16 80 20 92"/><path d="M122 50C118 66 124 80 120 92"/><path d="M168 38C172 58 166 76 170 92"/>
+    <path d="M254 46C250 62 256 78 252 92"/><path d="M328 34C324 56 330 76 326 92"/><path d="M92 58C96 72 90 84 94 92"/>
+  </g>
+
+  <!-- tło: ciemne, małe kwiaty (głównie po bokach) -->
+  <g opacity=".34">
+    <use href="#L" transform="translate(18 50) rotate(15) scale(.5)"/>
+    <use href="#L" transform="translate(96 62) rotate(60) scale(.46)"/>
+    <use href="#L" transform="translate(244 58) rotate(100) scale(.5)"/>
+    <use href="#L" transform="translate(328 42) rotate(20) scale(.5)"/>
+    <use href="#L" transform="translate(130 70) rotate(-70) scale(.4)"/>
+  </g>
+
+  <!-- pierwszy plan: kępy w dolnych rogach (przyciski mają ciemne podkłady w CSS) -->
+  <use href="#L" transform="translate(14 78) rotate(10) scale(.92)"/>
+  <use href="#L" transform="translate(52 94) rotate(60) scale(.56)"/>
+  <use href="#L" transform="translate(330 76) rotate(40) scale(.92)"/>
+  <use href="#L" transform="translate(292 94) rotate(-20) scale(.58)"/>
+  <g opacity=".6">
+    <use href="#L" transform="translate(-2 44) rotate(30) scale(.5)"/>
+    <use href="#L" transform="translate(344 40) rotate(-10) scale(.52)"/>
+  </g>
+  <!-- ciemna plama pod kontrolkami: czytelność przycisków -->
+  <ellipse cx="170" cy="66" rx="150" ry="40" fill="url(#hole)"/>
+  <rect y="46" width="340" height="44" fill="url(#fade)"/></svg>

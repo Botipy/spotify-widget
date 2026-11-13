@@ -307,3 +307,11 @@ html[data-layout="compact"] #plName { margin-top: 0; height: 14px; line-height: 
 
 
 .pl .ph.retry { background: rgba(var(--fg-rgb), .14); border: 1px dashed rgba(var(--fg-rgb), .4); font-size: 20px; font-weight: 400; color: var(--text); }
+
+/* serduszko (polubione) obok przycisku losowo */
+#heart .h-on { display: none; }
+#heart.on .h-on { display: block; }
+#heart.on .h-off { display: none; }
+#heart:disabled { opacity: .3; cursor: default; }
+.controls .side.left { gap: 2px; }
+html[data-layout="compact"] .controls .side.left .ic { width: 24px; height: 24px; }

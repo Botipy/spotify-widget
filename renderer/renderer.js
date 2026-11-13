@@ -10,6 +10,7 @@ if (!window.sp) {
     onLoggedOut() {}, onUpdate() {}, onSettings() {},
     getSettings: async () => ({ theme: 'liquid', layout: 'standard' }), setSettings: noop, openSettings: noop,
     state: async () => ({ auth: true, state: null }), toggle: noop, next: noop, prev: noop, shuffle: noop, seek: noop, volume: noop,
+    libContains: noop, libSet: noop, relogin: noop,
     playlists: async () => ({ ok: true, items: [] }), playPlaylist: noop, hide: noop, quit: noop, openUrl: noop,
   };
 }
@@ -164,6 +165,7 @@ function render() {
     delete $('art').dataset.src;
     $('bg').style.backgroundImage = '';
     card.classList.remove('has-art', 'playing');
+    paintHeart();
     setAccent(30, 215, 96);
     $('fill').style.width = '0';
     $('tcur').textContent = '0:00';
@@ -181,6 +183,8 @@ function render() {
   }
   card.classList.toggle('has-art', !!st.art);
   card.classList.toggle('playing', st.playing);
+  paintHeart();
+  ensureSavedKnown();
   $('shuffle').classList.toggle('on', st.shuffle);
   if (st.volume != null && !volDragging) { $('vol').value = st.volume; $('vol').style.setProperty('--v', st.volume + '%'); }
   $('tdur').textContent = fmt(st.duration);
@@ -345,6 +349,45 @@ function markCurrent() {
 
 $('filter').oninput = renderPlaylists;
 
+// ---------- Serduszko: dodaj/usuń bieżący utwór z polubionych ----------
+const savedCache = new Map();   // uri utworu -> czy polubiony
+let heartChecking = null, heartBusy = false;
+
+function paintHeart() {
+  const b = $('heart');
+  const ok = !!(st && st.kind === 'track' && st.uri);
+  const saved = ok && savedCache.get(st.uri) === true;
+  b.disabled = !ok;
+  b.classList.toggle('on', saved);
+  b.title = !ok ? 'Polubienia działają tylko dla utworów' : saved ? 'Usuń z polubionych' : 'Dodaj do polubionych';
+}
+async function ensureSavedKnown() {
+  if (!st || st.kind !== 'track' || !st.uri || savedCache.has(st.uri) || heartChecking === st.uri) return;
+  const uri = st.uri;
+  heartChecking = uri;
+  const r = await sp.libContains(uri);
+  heartChecking = null;
+  if (r.ok) savedCache.set(uri, r.saved); // przy braku zgody (needScope) poprosimy dopiero po kliknięciu serca
+  paintHeart();
+}
+$('heart').onclick = async () => {
+  if (!st || st.kind !== 'track' || !st.uri || heartBusy) return;
+  const uri = st.uri;
+  const want = savedCache.get(uri) !== true;
+  heartBusy = true;
+  savedCache.set(uri, want); paintHeart(); // od razu pokazujemy zmianę, w razie błędu cofniemy
+  let r = await sp.libSet(uri, want);
+  if (r.needScope) { // stary token nie ma uprawnień do biblioteki: jednorazowa ponowna zgoda
+    flash('Spotify prosi o dodatkową zgodę (polubione). Otwieram przeglądarkę…', true);
+    const a = await sp.relogin();
+    r = a.ok ? await sp.libSet(uri, want) : { ok: false, error: a.error || 'Nie udało się nadać zgody' };
+  }
+  heartBusy = false;
+  if (!r.ok) { savedCache.set(uri, !want); paintHeart(); flash(r.error || 'Nie udało się zmienić polubienia'); return; }
+  paintHeart();
+  flash(want ? 'Dodano do polubionych' : 'Usunięto z polubionych', true);
+};
+
 // Podgląd presetu w oknie ustawień: sztuczny stan odtwarzania, bez API
 function startPreview() {
   applyLook({ theme: qs.get('theme') || 'liquid', layout: qs.get('layout') || 'standard' });
@@ -371,7 +414,8 @@ function startPreview() {
   x.fillStyle = g; x.fillRect(0, 0, 200, 200);
   x.fillStyle = 'rgba(255,255,255,.28)'; x.beginPath(); x.arc(100, 100, 56, 0, 7); x.fill();
   x.fillStyle = 'rgba(0,0,0,.25)'; x.beginPath(); x.arc(100, 100, 18, 0, 7); x.fill();
-  st = { playing: true, title: qs.get('title') || 'Przykładowy utwór', artist: qs.get('artist') || 'Wykonawca, Gość', art: c.toDataURL(), duration: 157000, progress: 41000, shuffle: true, volume: 60, device: null, context: null };
+  st = { playing: true, title: qs.get('title') || 'Przykładowy utwór', artist: qs.get('artist') || 'Wykonawca, Gość', art: c.toDataURL(), duration: 157000, progress: 41000, shuffle: true, volume: 60, device: null, context: null, kind: 'track', uri: 'spotify:track:preview' };
+  savedCache.set('spotify:track:preview', true); // w podglądzie serce jest wypełnione
   stAt = Date.now();
   setInterval(() => { stAt = Date.now(); }, 150); // zamrożony postęp
   render();

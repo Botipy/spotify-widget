@@ -15,11 +15,13 @@ const SCOPES = [
   'user-read-currently-playing',
   'playlist-read-private',
   'playlist-read-collaborative',
+  'user-library-read',    // serduszko: sprawdzenie, czy utwór jest polubiony
+  'user-library-modify',  // serduszko: dodawanie/usuwanie z polubionych
 ].join(' ');
 
 // Dwa układy okna: standardowy (większy) i minimalistyczny (niski, poziomy pasek)
 const SIZES = { standard: { w: 300, h: 168 }, compact: { w: 340, h: 112 } };
-const THEMES = ['liquid', 'retro', 'terminal', 'gameboy', 'neon', 'vaporwave', 'win98', 'winamp', 'glass', 'y2k', 'sakura'];
+const THEMES = ['liquid', 'retro', 'terminal', 'gameboy', 'neon', 'vaporwave', 'win98', 'winamp', 'glass', 'y2k', 'sakura', 'higanbana'];
 const getSettings = () => ({ theme: 'liquid', layout: 'standard', ...((typeof store !== 'undefined' && store.settings) || {}) });
 const curSize = () => SIZES[getSettings().layout] || SIZES.standard;
 
@@ -186,6 +188,8 @@ function simplifyState(d) {
     volume: d.device ? d.device.volume_percent : null,
     device: d.device ? d.device.name : null,
     context: d.context ? d.context.uri : null,
+    uri: it.uri || null,       // do serduszka (polubione)
+    kind: it.type || 'track',  // 'track' | 'episode'
   };
 }
 
@@ -198,6 +202,37 @@ ipcMain.handle('auth:login', async (_e, clientId) => {
   try { await login(clientId); return { ok: true }; } catch (e) { return { ok: false, error: e.message }; }
 });
 ipcMain.handle('auth:logout', () => { tokens = null; delete store.refresh; saveStore(); return true; });
+
+// ---------- Polubione utwory (serduszko) ----------
+// Od lutego 2026 Spotify zastąpiło /me/tracks endpointami /me/library (po URI). Przy 404/405 próbujemy starych.
+const trackId = (uri) => (String(uri).match(/^spotify:track:([A-Za-z0-9]+)$/) || [])[1];
+const needsScope = (r) => r.status === 403 && /scope/i.test(errMsg(r));
+
+ipcMain.handle('library:contains', async (_e, uri) => {
+  const id = trackId(uri);
+  if (!id) return { ok: false, error: 'To nie jest utwór' };
+  let r = await api('GET', `/me/library/contains?uris=${encodeURIComponent(uri)}`);
+  if (r.status === 404 || r.status === 405) r = await api('GET', `/me/tracks/contains?ids=${id}`);
+  if (needsScope(r)) return { ok: false, needScope: true };
+  if (r.status === 200 && Array.isArray(r.data)) return { ok: true, saved: !!r.data[0] };
+  return { ok: false, error: errMsg(r) };
+});
+
+ipcMain.handle('library:set', async (_e, uri, save) => {
+  const id = trackId(uri);
+  if (!id) return { ok: false, error: 'To nie jest utwór' };
+  const method = save ? 'PUT' : 'DELETE';
+  let r = await api(method, `/me/library?uris=${encodeURIComponent(uri)}`);
+  if (r.status === 404 || r.status === 405) r = await api(method, `/me/tracks?ids=${id}`);
+  if (needsScope(r)) return { ok: false, needScope: true };
+  return r.status < 300 ? { ok: true, saved: !!save } : { ok: false, error: errMsg(r) };
+});
+
+// ponowne logowanie (nowe uprawnienia): otwiera stronę zgody Spotify, używa zapisanego Client ID
+ipcMain.handle('auth:relogin', async () => {
+  if (!store.clientId) return { ok: false, error: 'Brak Client ID' };
+  try { await login(store.clientId); return { ok: true }; } catch (e) { return { ok: false, error: e.message }; }
+});
 
 ipcMain.handle('player:state', async () => {
   const r = await api('GET', '/me/player?additional_types=episode');
@@ -424,5 +459,6 @@ if (!app.requestSingleInstanceLock()) {
   });
   app.on('window-all-closed', () => app.quit());
 }
+
 
 

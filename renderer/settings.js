@@ -1,6 +1,6 @@
 ﻿const THEMES = [
   ['liquid', 'Liquid Glass'], ['retro', 'Retro'], ['terminal', 'Terminal'], ['gameboy', 'Game Boy'], ['neon', 'Neon'],
-  ['vaporwave', 'Vaporwave'], ['win98', 'Win98'], ['winamp', 'Winamp'], ['glass', 'Glass'], ['y2k', 'Y2K'], ['sakura', 'Sakura'],
+  ['vaporwave', 'Vaporwave'], ['win98', 'Win98'], ['winamp', 'Winamp'], ['glass', 'Glass'], ['y2k', 'Y2K'], ['sakura', 'Sakura'], ['higanbana', 'Higanbana'],
 ];
 const SIZES = { standard: { w: 300, h: 168 }, compact: { w: 340, h: 112 } };
 
@@ -67,5 +67,6 @@ sp.onSettings((s) => {
   build();
   markSelection();
 })();
+
 
 

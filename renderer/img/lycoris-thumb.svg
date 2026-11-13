@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="-46 -46 92 92">
+  <defs>
+    <radialGradient id="pg" gradientUnits="userSpaceOnUse" cx="0" cy="0" r="46">
+      <stop offset="0" stop-color="#ff4a36"/><stop offset=".55" stop-color="#e3171e"/><stop offset="1" stop-color="#8c0810"/>
+    </radialGradient>
+    <g id="pt"><path d="M0 0C8-10 26-20 46-8C36-10 22-5 12 2C8 3 3 2 0 0Z" fill="url(#pg)" stroke="#6e060c" stroke-width=".6"/></g>
+    <g id="st"><path d="M0 0C4-16 20-34 40-34" fill="none" stroke="#ff4a3a" stroke-width="1.5" stroke-linecap="round"/><circle cx="40" cy="-34" r="2.6" fill="#ffb4a0"/></g>
+  </defs>
+  <use href="#pt"/><use href="#pt" transform="rotate(60)"/><use href="#pt" transform="rotate(120)"/>
+  <use href="#pt" transform="rotate(180)"/><use href="#pt" transform="rotate(240)"/><use href="#pt" transform="rotate(300)"/>
+  <use href="#st" transform="rotate(-20)"/><use href="#st" transform="rotate(32)"/><use href="#st" transform="rotate(84)"/>
+  <use href="#st" transform="rotate(136)"/><use href="#st" transform="rotate(188)"/><use href="#st" transform="rotate(240)"/><use href="#st" transform="rotate(292)"/>
+  <circle r="4" fill="#7a0b10"/>
+</svg>
