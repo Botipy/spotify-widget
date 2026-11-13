@@ -33,6 +33,7 @@
         <div class="seg" id="modeSeg">
           <button data-mode="player">Odtwarzacz</button>
           <button data-mode="playlists">Playlisty</button>
+        <button data-mode="pomo">Pomodoro</button>
         </div>
       </div>
     </div>
@@ -73,14 +74,48 @@
     </div>
   </section>
 
-  <!-- POMODORO (wkrótce) -->
+  <!-- POMODORO -->
   <section class="tab" id="tab-pomodoro" role="tabpanel" hidden>
-    <div class="soon">
-      <h2>Pomodoro: wkrótce</h2>
-      <p>Timer z własnym układem. Tutaj ustawisz czasy (Focus, krótka i długa przerwa, liczba sesji) i wybierzesz gotowy preset czasów, np. 25/5, 45/15 albo 50/10.</p>
+    <p class="lead">Timer Pomodoro z własnym układem. Włącz go, a w widgecie pojawi się ikona zegara, która przełącza muzykę i timer.</p>
+    <div class="rows">
+      <label class="row">
+        <span class="txt"><b>Włącz Pomodoro</b><small>Timer działa w tle także wtedy, gdy widget jest ukryty.</small></span>
+        <input type="checkbox" class="sw" data-pomo="enabled">
+      </label>
+    </div>
+
+    <div id="pomoMore">
+      <h3>Czasy</h3>
+      <div class="chips" id="presetChips">
+        <button data-preset="25/5" title="25 min praca, 5 min przerwa, 15 min długa">25 / 5</button>
+        <button data-preset="45/15" title="45 min praca, 15 min przerwa, 30 min długa">45 / 15</button>
+        <button data-preset="50/10" title="50 min praca, 10 min przerwa, 20 min długa">50 / 10</button>
+        <button data-preset="90/20" title="90 min praca (głęboka), 20 min przerwa, 30 min długa">90 / 20</button>
+        <button data-preset="custom">Własne</button>
+      </div>
+      <div class="rows">
+        <div class="row"><span class="txt"><b>Focus</b><small>Czas pracy w minutach.</small></span><input type="number" class="num" data-pomo="focusMin" min="1" max="180"></div>
+        <div class="row"><span class="txt"><b>Krótka przerwa</b><small>Minuty.</small></span><input type="number" class="num" data-pomo="shortMin" min="1" max="60"></div>
+        <div class="row"><span class="txt"><b>Długa przerwa</b><small>Minuty, po ostatniej sesji cyklu.</small></span><input type="number" class="num" data-pomo="longMin" min="1" max="120"></div>
+        <div class="row"><span class="txt"><b>Sesje do długiej przerwy</b><small>Ile bloków pracy w jednym cyklu.</small></span><input type="number" class="num" data-pomo="sessions" min="1" max="12"></div>
+      </div>
+
+      <h3>Przebieg</h3>
+      <div class="rows">
+        <label class="row"><span class="txt"><b>Automatyczny start kolejnego bloku</b><small>Wyłączone: po każdym bloku timer czeka na Twój start.</small></span><input type="checkbox" class="sw" data-pomo="autoStart"></label>
+        <label class="row"><span class="txt"><b>Dźwięk na początku bloku</b><small>Krótki sygnał, gdy zaczyna się praca albo przerwa.</small></span>
+          <span class="inline"><button class="btn small" id="soundWork">Praca</button><button class="btn small" id="soundBreak">Przerwa</button><input type="checkbox" class="sw" data-pomo="sound"></span></label>
+      </div>
+
+      <h3>Muzyka</h3>
+      <div class="rows">
+        <label class="row"><span class="txt"><b>Muzyka podczas Focus</b><small>Na przerwie muzyka jest pauzowana. Wymaga zalogowania do Spotify.</small></span><input type="checkbox" class="sw" data-pomo="music"></label>
+        <div class="row"><span class="txt"><b>Playlista</b><small id="musicNow">Domyślnie gra oficjalna playlista Spotify do pracy.</small></span><select id="musicSel" class="dd"></select></div>
+      </div>
     </div>
   </section>
 
+  <script src="sound.js"></script>
   <script src="settings.js"></script>
 </body>
 </html>

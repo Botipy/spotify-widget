@@ -353,3 +353,61 @@ html[data-layout="compact"] #login { gap: 4px; padding-top: 6px; }
 html[data-layout="compact"] #login .top { margin-bottom: 2px; }
 html[data-layout="compact"] #login .hint { display: none; }
 html[data-layout="compact"] #login:has(.err:not(:empty)) #redirect { display: none; }
+
+/* =====================================================================
+   POMODORO: widok timera (ikona zegara w pasku odtwarzacza przełącza muzyka <-> timer)
+   ===================================================================== */
+.pomo-modes { display: flex; gap: 6px; margin-bottom: 8px; flex-shrink: 0; }
+.pm {
+  flex: 1; height: 24px; padding: 0 8px; border-radius: 99px; white-space: nowrap;
+  border: 1px solid rgba(var(--fg-rgb), .28); background: transparent; color: var(--text);
+  font-size: 11px; font-weight: 700; transition: background .15s, color .15s, border-color .15s;
+}
+.pm:hover { background: rgba(var(--fg-rgb), .1); }
+.pm.on { background: var(--accent); border-color: var(--accent); color: var(--on-accent, #000); }
+.pm .shortl { display: none; }
+.pomo-body { flex: 1; min-height: 0; display: flex; align-items: center; gap: 14px; }
+.ring { position: relative; width: 84px; height: 84px; flex-shrink: 0; }
+.ring svg { width: 100%; height: 100%; transform: rotate(-90deg); }
+.ring circle { fill: none; stroke-width: 8; }
+.ring .trk { stroke: rgba(var(--fg-rgb), .18); }
+.ring .fg { stroke: var(--accent); stroke-linecap: round; stroke-dasharray: 276.46; stroke-dashoffset: 0; transition: stroke-dashoffset .3s linear; filter: drop-shadow(0 0 5px rgba(var(--accent-rgb), .5)); }
+.ring #pomoTime { position: absolute; inset: 0; display: grid; place-items: center; font-size: 20px; font-weight: 800; letter-spacing: -.01em; font-variant-numeric: tabular-nums; }
+.pomo-side { flex: 1; min-width: 0; display: flex; flex-direction: column; align-items: center; gap: 8px; }
+.pomo-info { display: flex; flex-direction: column; align-items: center; gap: 5px; }
+.pdots { display: flex; gap: 7px; }
+.pdot { width: 9px; height: 9px; border-radius: 50%; background: rgba(var(--fg-rgb), .25); }
+.pdot.done { background: var(--accent); }
+.pdot.cur { background: transparent; box-shadow: inset 0 0 0 2px var(--accent); }
+.plabel { font-size: 11.5px; font-weight: 600; color: var(--text-dim); white-space: nowrap; }
+.pomo-ctl { display: flex; align-items: center; gap: 8px; }
+#pomo .play { width: 42px; height: 42px; margin: 0; }
+#pomo .ic.big { width: 34px; height: 34px; }
+#pomo.running .pp-play, #pomo:not(.running) .pp-pause { display: none; }
+#pomo[data-mode="short"] .ring .fg, #pomo[data-mode="long"] .ring .fg { stroke: var(--accent-2, var(--accent)); }
+
+/* ikona zegara w playerze: miejsce dla niej w układzie minimalistycznym */
+html[data-layout="compact"] #player #pomoBtn { right: 78px; }
+html.pomo-on[data-layout="compact"] #player:not(.pl-mode) .title { margin-right: 102px; }
+html.pomo-on[data-layout="compact"] #player.pl-mode #filter, html.pomo-on[data-layout="compact"] #player.tr-mode .trtitle { margin-right: 106px; }
+
+/* układ minimalistyczny widoku timera (340x112) */
+html[data-layout="compact"] #pomo { padding: 8px 10px 8px 22px; display: grid; grid-template-columns: 76px 1fr; grid-template-rows: 24px 16px 1fr; column-gap: 12px; row-gap: 4px; }
+html[data-layout="compact"] #pomo .top, html[data-layout="compact"] #pomo .pomo-body, html[data-layout="compact"] #pomo .pomo-side { display: contents; }
+html[data-layout="compact"] #pomo .brand, html[data-layout="compact"] #pomo .spacer { display: none; }
+html[data-layout="compact"] #pomo .grip { position: absolute; left: 2px; top: 50%; transform: translateY(-50%); width: 18px; height: 44px; margin: 0; }
+html[data-layout="compact"] #pomo .top .ic { position: absolute; top: 6px; width: 22px; height: 22px; border-radius: 7px; }
+html[data-layout="compact"] #pomo .top .ic svg { width: 14px; height: 14px; }
+html[data-layout="compact"] #pomo #close3 { right: 6px; }
+html[data-layout="compact"] #pomo #setBtn2 { right: 30px; }
+html[data-layout="compact"] #pomo #pomoBack { right: 54px; }
+html[data-layout="compact"] #pomo .ring { grid-column: 1; grid-row: 1 / 4; width: 76px; height: 76px; align-self: center; }
+html[data-layout="compact"] #pomo .ring #pomoTime { font-size: 17px; }
+html[data-layout="compact"] #pomo .pomo-modes { grid-column: 2; grid-row: 1; margin: 0 80px 0 0; gap: 4px; align-self: center; }
+html[data-layout="compact"] #pomo .pm { height: 22px; padding: 0 4px; font-size: 10px; }
+html[data-layout="compact"] #pomo .pm .long { display: none; }
+html[data-layout="compact"] #pomo .pm .shortl { display: inline; }
+html[data-layout="compact"] #pomo .pomo-info { grid-column: 2; grid-row: 2; flex-direction: row; justify-content: flex-start; gap: 10px; align-self: center; }
+html[data-layout="compact"] #pomo .pomo-ctl { grid-column: 2; grid-row: 3; align-self: center; justify-content: center; gap: 10px; }
+html[data-layout="compact"] #pomo .play { width: 38px; height: 38px; }
+html[data-layout="compact"] #pomo .ic.big { width: 32px; height: 32px; }

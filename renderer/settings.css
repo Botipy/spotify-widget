@@ -66,3 +66,19 @@ label.row { cursor: pointer; }
 .soon { margin-top: 14px; max-width: 560px; padding: 22px; border: 1px dashed #34343e; border-radius: 14px; background: #17171b; }
 .soon h2 { font-size: 16px; margin-bottom: 8px; }
 .soon p { font-size: 13px; line-height: 1.55; color: #9a9aa6; }
+
+/* ---------- zakładka Pomodoro ---------- */
+#tab-pomodoro h3 { margin: 22px 0 0; font-size: 11px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: #8a8a96; }
+#pomoMore { transition: opacity .2s; }
+#pomoMore.off { opacity: .4; pointer-events: none; }
+.chips { display: flex; flex-wrap: wrap; gap: 8px; margin: 12px 0 0; }
+.chips button { border: 1px solid #34343e; background: #1d1d23; color: #c8c8d2; font: inherit; font-size: 13px; font-weight: 700; padding: 8px 16px; border-radius: 99px; cursor: pointer; transition: all .15s; }
+.chips button:hover:not(:disabled) { background: #26262e; color: #fff; }
+.chips button.on { background: #1ed760; border-color: #1ed760; color: #04210d; }
+.chips button:disabled { opacity: .5; cursor: default; }
+.num { width: 76px; padding: 8px 10px; border-radius: 10px; border: 1px solid #34343e; background: #121216; color: #f2f2f5; font: inherit; font-size: 14px; font-weight: 600; text-align: center; outline: none; }
+.num:focus { border-color: #1ed760; }
+.dd { max-width: 260px; padding: 8px 10px; border-radius: 10px; border: 1px solid #34343e; background: #121216; color: #f2f2f5; font: inherit; font-size: 13px; outline: none; }
+.dd:focus { border-color: #1ed760; }
+.inline { display: flex; align-items: center; gap: 8px; }
+.btn.small { padding: 6px 11px; font-size: 12px; }

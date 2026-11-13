@@ -11,6 +11,7 @@ if (!window.sp) {
     getSettings: async () => ({ theme: 'liquid', layout: 'standard' }), setSettings: noop, openSettings: noop,
     state: async () => ({ auth: true, state: null }), toggle: noop, next: noop, prev: noop, shuffle: noop, seek: noop, volume: noop,
     libContains: noop, libSet: noop, relogin: noop, playlistTracks: noop,
+    pomoGet: async () => null, pomoCmd: noop, pomoSet: noop, pomoSuggest: async () => [], onPomo() {}, onPomoSound() {},
     playlists: async () => ({ ok: true, items: [] }), playPlaylist: noop, hide: noop, quit: noop, openUrl: noop,
   };
 }
@@ -46,6 +47,7 @@ const fmt = (ms) => {
 function show(view) {
   $('login').hidden = view !== 'login';
   $('player').hidden = view !== 'player';
+  $('pomo').hidden = view !== 'pomo';
 }
 
 // Powiadomienia (polubienia, aktualizacje, błędy) nie zasłaniają przycisków: na kilka sekund podmieniają linię
@@ -485,11 +487,68 @@ $('heart').onclick = async () => {
   flash(want ? 'Dodano do polubionych' : 'Usunięto z polubionych', true);
 };
 
+// ---------- Pomodoro: widok timera ----------
+let pomoSt = null, pomoAt = 0, pomoView = false;
+const RING_C = 2 * Math.PI * 44;
+const pomoFmt = (ms) => { const s = Math.max(0, Math.ceil(ms / 1000)); return String(Math.floor(s / 60)).padStart(2, '0') + ':' + String(s % 60).padStart(2, '0'); };
+function pomoRemain() {
+  if (!pomoSt) return 0;
+  return pomoSt.running ? Math.max(0, pomoSt.remainMs - (performance.now() - pomoAt)) : pomoSt.remainMs;
+}
+function paintPomoView() {
+  if (!pomoSt || $('pomo').hidden) return;
+  const r = pomoRemain(), total = pomoSt.totalMs || 1;
+  $('pomoTime').textContent = pomoFmt(r);
+  $('ringFg').style.strokeDashoffset = String(RING_C * (1 - Math.min(1, r / total))); // pierścień „opróżnia się" wraz z upływem czasu
+}
+function showPomo(on) {
+  pomoView = on;
+  if (on) { setPlaylists(false); show('pomo'); paintPomoView(); } else show('player');
+}
+function applyPomoState(st) {
+  if (!st) return;
+  pomoSt = st; pomoAt = performance.now();
+  const on = !!st.settings.enabled;
+  document.documentElement.classList.toggle('pomo-on', on);
+  $('pomoBtn').hidden = !on;
+  if (!on && pomoView) showPomo(false); // Pomodoro wyłączone w ustawieniach: wracamy do muzyki
+  const pv = $('pomo');
+  pv.classList.toggle('running', st.running);
+  pv.dataset.mode = st.mode;
+  document.querySelectorAll('.pm').forEach((b) => b.classList.toggle('on', b.dataset.mode === st.mode));
+  const box = $('pomoDots');
+  if (box.children.length !== st.sessions) {
+    box.innerHTML = '';
+    for (let i = 0; i < st.sessions; i++) box.appendChild(Object.assign(document.createElement('i'), { className: 'pdot' }));
+  }
+  const done = st.mode === 'focus' ? st.session - 1 : st.session; // w przerwie bieżąca sesja jest już zrobiona
+  [...box.children].forEach((d, i) => { d.className = 'pdot' + (i < done ? ' done' : '') + (st.mode === 'focus' && i === st.session - 1 ? ' cur' : ''); });
+  $('pomoLabel').textContent = st.mode === 'long' ? 'Długa przerwa' : (st.mode === 'short' ? 'Przerwa · ' : 'Sesja ') + st.session + '/' + st.sessions;
+  paintPomoView();
+}
+$('pomoBtn').onclick = () => showPomo(true);
+$('pomoBack').onclick = () => showPomo(false);
+$('setBtn2').onclick = () => sp.openSettings();
+$('close3').onclick = () => sp.hide();
+document.querySelectorAll('.pm').forEach((b) => { b.onclick = () => sp.pomoCmd('mode', b.dataset.mode); });
+$('pToggle').onclick = () => sp.pomoCmd('toggle');
+$('pReset').onclick = () => sp.pomoCmd('reset');
+$('pSkip').onclick = () => sp.pomoCmd('skip');
+sp.onPomo(applyPomoState);
+sp.onPomoSound((kind) => playPomoSound(kind));
+setInterval(paintPomoView, 250);
+sp.pomoGet().then(applyPomoState).catch(() => {});
 // Podgląd presetu w oknie ustawień: sztuczny stan odtwarzania, bez API
 function startPreview() {
   applyLook({ theme: qs.get('theme') || 'liquid', layout: qs.get('layout') || 'standard' });
   document.body.classList.add('preview');
   show('player');
+  if (qs.get('mode') === 'pomo') { // podgląd widoku timera (stan zamrożony)
+    applyPomoState({ mode: 'focus', session: 3, sessions: 4, running: true, remainMs: 24 * 60000 + 35000, totalMs: 25 * 60000, settings: { enabled: true } });
+    show('pomo');
+    setInterval(() => { pomoAt = performance.now(); paintPomoView(); }, 150);
+    return;
+  }
   if (qs.get('mode') === 'playlists') {
     const colors = [['#ff3d81', '#7b2ff7'], ['#1ed760', '#0b3d2e'], ['#ffb347', '#ff5e62'], ['#36d1dc', '#5b86e5'], ['#f857a6', '#ff5858'], ['#8e2de2', '#4a00e0'], ['#f7971e', '#ffd200'], ['#00c6ff', '#0072ff']];
     playlists = colors.map((c, i) => {

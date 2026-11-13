@@ -331,6 +331,140 @@ ipcMain.handle('playlists:tracks', async (_e, uri, offset = 0) => {
   return { ok: true, items, total: r.data.total || items.length, more: !!r.data.next };
 });
 
+// ---------- Pomodoro (silnik w procesie głównym: działa też przy ukrytym widgecie) ----------
+const POMO_DEFAULTS = { enabled: false, focusMin: 25, shortMin: 5, longMin: 15, sessions: 4, autoStart: true, sound: true, music: true, musicUri: '', musicName: '', preset: '25/5' };
+const POMO_PRESETS = { '25/5': [25, 5, 15], '45/15': [45, 15, 30], '50/10': [50, 10, 20], '90/20': [90, 20, 30] }; // [focus, krótka, długa]
+const getPomo = () => ({ ...POMO_DEFAULTS, ...(store.pomo || {}) });
+const POMO_SCALE = Number(process.env.SW_POMO_SCALE) || 1; // tylko do testów: np. 60 = minuta trwa sekundę
+const pomoMs = (mode) => {
+  const s = getPomo();
+  const min = mode === 'focus' ? s.focusMin : mode === 'short' ? s.shortMin : s.longMin;
+  return (Math.max(1, min) * 60000) / POMO_SCALE;
+};
+const pomo = { mode: 'focus', session: 1, running: false, endsAt: 0, remainMs: null, musicPaused: false };
+
+function pomoState() {
+  const s = getPomo();
+  const total = pomoMs(pomo.mode);
+  const remain = pomo.running ? Math.max(0, pomo.endsAt - Date.now()) : (pomo.remainMs == null ? total : pomo.remainMs);
+  return { mode: pomo.mode, session: pomo.session, sessions: s.sessions, running: pomo.running, remainMs: Math.round(remain), totalMs: Math.round(total), settings: s };
+}
+let pomoLastSec = -1;
+function pomoBroadcast() {
+  const st = pomoState();
+  pomoLastSec = Math.ceil(st.remainMs / 1000);
+  for (const w of BrowserWindow.getAllWindows()) if (!w.isDestroyed()) w.webContents.send('pomo:state', st);
+}
+function pomoSound(kind) { // 'work' = zaczyna się praca, 'break' = zaczyna się przerwa; dźwięk gra widget (Web Audio)
+  if (getPomo().sound && win && !win.isDestroyed()) win.webContents.send('pomo:sound', kind);
+}
+
+// muzyka na czas pracy: kontekst (playlista) startowany przez API, na przerwie pauza
+async function startContext(uri) {
+  let r = await api('PUT', '/me/player/play', { context_uri: uri });
+  if (r.status === 404) {
+    const d = await api('GET', '/me/player/devices');
+    const dev = d.data && d.data.devices && d.data.devices[0];
+    if (dev) r = await api('PUT', `/me/player/play?device_id=${dev.id}`, { context_uri: uri });
+  }
+  return r.status < 300;
+}
+async function findPlaylist(query) { // playlista Spotify o danej nazwie, wyszukana w czasie działania (bez wpisanych na sztywno ID)
+  const r = await api('GET', `/search?q=${encodeURIComponent(query)}&type=playlist&limit=10`);
+  const items = ((r.data && r.data.playlists && r.data.playlists.items) || []).filter(Boolean);
+  const p = items.find((x) => x.owner && x.owner.id === 'spotify') || items[0];
+  return p ? { uri: p.uri, name: p.name, image: p.images && p.images[0] ? p.images[0].url : null } : null;
+}
+// domyślna muzyka do pracy: oficjalna playlista Spotify wskazana przez usera (można wybrać własną w ustawieniach)
+const POMO_DEFAULT_MUSIC = 'spotify:playlist:37i9dQZF1DWT5lkChsPmpy';
+async function pomoPlayMusic() {
+  const s = getPomo();
+  if (!s.music || !tokens) return;
+  await startContext(s.musicUri || POMO_DEFAULT_MUSIC);
+}
+async function pomoPauseMusic() { if (getPomo().music && tokens) await api('PUT', '/me/player/pause'); }
+async function pomoResumeMusic() { if (getPomo().music && tokens) await api('PUT', '/me/player/play'); }
+
+function pomoStart() {
+  if (pomo.running) return;
+  const remain = pomo.remainMs == null ? pomoMs(pomo.mode) : pomo.remainMs;
+  const fresh = pomo.remainMs == null;
+  pomo.running = true; pomo.endsAt = Date.now() + remain; pomo.remainMs = null;
+  if (pomo.mode === 'focus') { if (fresh || !pomo.musicPaused) pomoPlayMusic(); else pomoResumeMusic(); }
+  pomo.musicPaused = false;
+  pomoBroadcast();
+}
+function pomoPause() {
+  if (!pomo.running) return;
+  pomo.remainMs = Math.max(0, pomo.endsAt - Date.now());
+  pomo.running = false;
+  if (pomo.mode === 'focus') { pomo.musicPaused = true; pomoPauseMusic(); }
+  pomoBroadcast();
+}
+function pomoReset() {
+  const wasFocus = pomo.running && pomo.mode === 'focus';
+  pomo.running = false; pomo.remainMs = null; pomo.musicPaused = false;
+  if (wasFocus) pomoPauseMusic();
+  pomoBroadcast();
+}
+function pomoSetMode(mode) {
+  if (!['focus', 'short', 'long'].includes(mode)) return;
+  const wasFocus = pomo.running && pomo.mode === 'focus';
+  pomo.mode = mode; pomo.running = false; pomo.remainMs = null; pomo.musicPaused = false;
+  if (wasFocus) pomoPauseMusic();
+  pomoBroadcast();
+}
+function pomoNext(auto) { // auto = blok skończył się sam; false = użytkownik pominął
+  const s = getPomo();
+  const prev = pomo.mode;
+  if (prev === 'focus') pomo.mode = pomo.session >= s.sessions ? 'long' : 'short';
+  else { pomo.session = prev === 'long' ? 1 : pomo.session + 1; pomo.mode = 'focus'; }
+  pomo.remainMs = null; pomo.musicPaused = false;
+  const run = auto ? s.autoStart : pomo.running; // po pominięciu zostaje tak, jak było (grał = gra dalej)
+  pomo.running = run; pomo.endsAt = run ? Date.now() + pomoMs(pomo.mode) : 0;
+  pomoSound(pomo.mode === 'focus' ? 'work' : 'break');
+  if (pomo.mode === 'focus') { if (run) pomoPlayMusic(); } else pomoPauseMusic();
+  pomoBroadcast();
+}
+setInterval(() => {
+  if (!pomo.running) return;
+  if (Date.now() >= pomo.endsAt) { pomoNext(true); return; }
+  const sec = Math.ceil((pomo.endsAt - Date.now()) / 1000);
+  if (sec !== pomoLastSec) pomoBroadcast(); // wysyłamy raz na sekundę
+}, 250);
+
+ipcMain.handle('pomo:get', () => pomoState());
+ipcMain.handle('pomo:cmd', (_e, cmd, arg) => {
+  if (cmd === 'toggle') (pomo.running ? pomoPause() : pomoStart());
+  else if (cmd === 'reset') pomoReset();
+  else if (cmd === 'skip') pomoNext(false);
+  else if (cmd === 'mode') pomoSetMode(arg);
+  return pomoState();
+});
+ipcMain.handle('pomo:set', (_e, patch = {}) => {
+  const cur = getPomo();
+  const next = { ...cur };
+  const num = (v, lo, hi, d) => Math.min(hi, Math.max(lo, Math.round(Number(v)) || d));
+  if ('enabled' in patch) next.enabled = !!patch.enabled;
+  if ('autoStart' in patch) next.autoStart = !!patch.autoStart;
+  if ('sound' in patch) next.sound = !!patch.sound;
+  if ('music' in patch) next.music = !!patch.music;
+  if ('focusMin' in patch) { next.focusMin = num(patch.focusMin, 1, 180, cur.focusMin); next.preset = 'custom'; }
+  if ('shortMin' in patch) { next.shortMin = num(patch.shortMin, 1, 60, cur.shortMin); next.preset = 'custom'; }
+  if ('longMin' in patch) { next.longMin = num(patch.longMin, 1, 120, cur.longMin); next.preset = 'custom'; }
+  if ('sessions' in patch) next.sessions = num(patch.sessions, 1, 12, cur.sessions);
+  if (patch.preset && POMO_PRESETS[patch.preset]) { [next.focusMin, next.shortMin, next.longMin] = POMO_PRESETS[patch.preset]; next.preset = patch.preset; }
+  if ('musicUri' in patch) { next.musicUri = String(patch.musicUri || ''); next.musicName = String(patch.musicName || ''); }
+  store.pomo = next; saveStore();
+  if (cur.enabled && !next.enabled) { pomoPause(); pomoReset(); } // wyłączenie Pomodoro zatrzymuje timer
+  pomoBroadcast();
+  return pomoState();
+});
+ipcMain.handle('pomo:suggest', async () => { // propozycje spokojnej muzyki do pracy (wyszukiwane w Spotify)
+  const names = ['Deep Focus', 'Lo-Fi Beats', 'Peaceful Piano'];
+  const found = await Promise.all(names.map((n) => findPlaylist(n).catch(() => null)));
+  return found.filter(Boolean);
+});
 // ---------- Okno ----------
 function applyLayoutSize() {
   if (!win || win.isDestroyed()) return;
@@ -433,7 +567,7 @@ function createWindow() {
     skipTaskbar: true, hasShadow: false, show: false,
     alwaysOnTop: store.onTop !== false,
     icon: path.join(__dirname, 'assets', 'icon.png'),
-    webPreferences: { preload: path.join(__dirname, 'preload.js'), contextIsolation: true, nodeIntegration: false },
+    webPreferences: { preload: path.join(__dirname, 'preload.js'), contextIsolation: true, nodeIntegration: false, backgroundThrottling: false },
   });
   if (store.onTop !== false) win.setAlwaysOnTop(true, 'floating');
   win.loadFile(path.join(__dirname, 'renderer', 'index.html'));

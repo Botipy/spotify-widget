@@ -402,3 +402,48 @@ html[data-theme="higanbana"] .volbox { background: rgba(0, 0, 0, .62); border-ra
 
 html[data-layout="compact"][data-theme="higanbana"] .volbox { padding: 3px 5px; gap: 3px; }
 html[data-layout="compact"][data-theme="higanbana"] #vol { width: 24px; }
+
+/* ---------- Pomodoro: dopasowania presetów ---------- */
+html[data-theme="gameboy"] { --on-accent: #a8c34f; }
+html[data-theme="win98"], html[data-theme="glass"], html[data-theme="higanbana"], html[data-theme="sakura"] { --on-accent: #fff; }
+/* terminal: przyciski timera i aktywny tryb jako tekst */
+html[data-theme="terminal"] #pomo .ic.big, html[data-theme="terminal"] #pomo .play { width: auto; height: auto; }
+html[data-theme="terminal"] #pReset::before { content: '[ ↻ ]'; }
+html[data-theme="terminal"] #pSkip::before { content: '[ >| ]'; }
+html[data-theme="terminal"] #pToggle::before { content: '[ > ]'; }
+html[data-theme="terminal"] #pomo.running #pToggle::before { content: '[ II ]'; }
+html[data-theme="terminal"] .pm { border-radius: 4px; }
+html[data-theme="terminal"] .pm.on { background: transparent; color: #39ff6a; border-color: #39ff6a; box-shadow: 0 0 8px rgba(57, 255, 106, .5); }
+html[data-theme="terminal"] .ring .fg { filter: drop-shadow(0 0 4px #39ff6a); }
+/* retro / gameboy: kanciaste pastylki */
+html[data-theme="retro"] .pm { border-radius: 0; border-width: 2px; }
+html[data-theme="retro"] .pdot, html[data-theme="gameboy"] .pdot { border-radius: 0; }
+html[data-theme="gameboy"] .pm { border-radius: 4px; border-color: #0f380f; color: #0f380f; }
+html[data-theme="gameboy"] .pm.on { background: #0f380f; color: #a8c34f; }
+/* win98: fazowane przyciski trybów, pasek tytułu karty w układzie minimalistycznym */
+html[data-theme="win98"] .pm { border-radius: 0; border: none; background: #c0c0c0; color: #000; box-shadow: var(--bevel-out); }
+html[data-theme="win98"] .pm.on { box-shadow: var(--bevel-in); font-weight: 800; background: #c0c0c0; color: #000; }
+html[data-theme="win98"] .pdot { border-radius: 0; }
+html[data-theme="win98"][data-layout="compact"] #card:has(#pomo:not([hidden]))::before { content: 'Pomodoro'; }
+html[data-theme="win98"][data-layout="compact"] #pomo { padding-top: 20px; grid-template-rows: 22px 16px 1fr; row-gap: 2px; }
+html[data-theme="win98"][data-layout="compact"] #pomo .top .ic { top: 1px; width: 15px; height: 13px; }
+html[data-theme="win98"][data-layout="compact"] #pomo .top .ic svg { width: 9px; height: 9px; }
+html[data-theme="win98"][data-layout="compact"] #pomo #close3 { right: 3px; }
+html[data-theme="win98"][data-layout="compact"] #pomo #setBtn2 { right: 21px; }
+html[data-theme="win98"][data-layout="compact"] #pomo #pomoBack { right: 39px; }
+html[data-theme="win98"][data-layout="compact"] #pomo .pomo-modes { margin-right: 0; }
+html[data-theme="win98"][data-layout="compact"] #pomo .ring { width: 62px; height: 62px; }
+html[data-theme="win98"][data-layout="compact"] #pomo .play { width: 36px; height: 28px; }
+html[data-theme="win98"][data-layout="compact"] #pomo .ic.big { width: 30px; height: 26px; }
+html[data-theme="win98"][data-layout="compact"] #player #pomoBtn { right: 57px; }
+/* winamp: metalowe pastylki */
+html[data-theme="winamp"] .pm { border-radius: 5px; border-color: #55555f; color: #d9ffd0; background: linear-gradient(180deg, #4a4a54, #2a2a31); }
+html[data-theme="winamp"] .pm.on { background: #040704; color: #5cff2e; border-color: #5cff2e; box-shadow: 0 0 8px rgba(92, 255, 46, .5); }
+html[data-theme="winamp"] .ring #pomoTime { font-family: 'Cascadia Mono', Consolas, monospace; color: #5cff2e; text-shadow: 0 0 8px rgba(92, 255, 46, .6); }
+/* y2k / glass / sakura / higanbana: kolory pastylek z zmiennych */
+html[data-theme="y2k"] .pm { border-color: #8b97a9; background: linear-gradient(180deg, #fff, #d4dae6); color: #1b2433; }
+html[data-theme="y2k"] .pm.on { background: linear-gradient(180deg, #8fe3ff, #17b8ff); border-color: #0a8ae0; color: #04406b; }
+html[data-theme="higanbana"] .pm { border-color: rgba(229, 38, 43, .55); }
+html[data-theme="sakura"] .pm { border-color: rgba(232, 112, 154, .6); color: #6b1d3f; }
+html[data-theme="neon"] .pm { border-color: rgba(255, 43, 214, .55); }
+html[data-theme="neon"] .pm.on { box-shadow: 0 0 10px rgba(38, 230, 255, .7); }

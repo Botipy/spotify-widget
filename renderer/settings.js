@@ -76,6 +76,7 @@ function showTab(name) {
   document.querySelectorAll('#tabs button').forEach((b) => { b.classList.toggle('on', b.dataset.tab === name); b.setAttribute('aria-selected', b.dataset.tab === name); });
   try { localStorage.setItem('settingsTab', name); } catch {}
   if (name === 'system' || name === 'behavior') loadApp();
+  if (name === 'pomodoro') loadPomo();
 }
 document.querySelectorAll('#tabs button').forEach((b) => { b.onclick = () => showTab(b.dataset.tab); });
 
@@ -108,6 +109,74 @@ $('logoutBtn').onclick = async () => { await sp.appLogout(); await loadApp(); $(
 sp.onUpdate((msg) => { $('updMsg').textContent = msg; if (/gotowa|instaluję/i.test(msg)) loadApp(); });
 window.addEventListener('focus', () => { if (!$('tab-behavior').hidden || !$('tab-system').hidden) loadApp(); }); // zmiany z menu zasobnika
 
+// ---------- Pomodoro ----------
+function paintPomo(s) {
+  document.querySelectorAll('[data-pomo]').forEach((el) => {
+    const k = el.dataset.pomo;
+    if (el.type === 'checkbox') el.checked = !!s[k];
+    else if (document.activeElement !== el) el.value = s[k];
+  });
+  document.querySelectorAll('#presetChips button').forEach((b) => b.classList.toggle('on', b.dataset.preset === s.preset));
+  document.getElementById('pomoMore').classList.toggle('off', !s.enabled);
+}
+let musicOptsFor = null;
+async function loadMusicOptions(s) {
+  const sel = $('musicSel');
+  const key = s.musicUri + '|' + s.music;
+  if (musicOptsFor === key && sel.options.length > 1) return;
+  const acc = await sp.appGet();
+  sel.innerHTML = '';
+  if (!acc.loggedIn) {
+    sel.appendChild(Object.assign(document.createElement('option'), { value: '', textContent: 'Zaloguj się do Spotify, aby wybrać' }));
+    sel.disabled = true;
+    $('musicNow').textContent = 'Wymaga zalogowania do Spotify.';
+    return;
+  }
+  sel.disabled = false;
+  sel.appendChild(Object.assign(document.createElement('option'), { value: '', textContent: 'Domyślnie: oficjalna playlista Spotify do pracy' }));
+  const addGroup = (label, items) => {
+    if (!items.length) return;
+    const g = document.createElement('optgroup'); g.label = label;
+    for (const p of items) g.appendChild(Object.assign(document.createElement('option'), { value: p.uri, textContent: p.name }));
+    sel.appendChild(g);
+  };
+  const [sugg, mine] = await Promise.all([sp.pomoSuggest().catch(() => []), sp.playlists().then((r) => r.items || []).catch(() => [])]);
+  addGroup('Spokojna muzyka do pracy (propozycje Spotify)', sugg);
+  addGroup('Moje playlisty', mine);
+  if (s.musicUri && ![...sel.options].some((o) => o.value === s.musicUri)) {
+    sel.appendChild(Object.assign(document.createElement('option'), { value: s.musicUri, textContent: s.musicName || 'Wybrana playlista' }));
+  }
+  sel.value = s.musicUri || '';
+  $('musicNow').textContent = s.musicUri ? ('Wybrana: ' + (s.musicName || 'playlista')) : 'Gdy nic nie wybierzesz, gra oficjalna playlista Spotify do pracy.';
+  musicOptsFor = key;
+}
+async function loadPomo() {
+  const st = await sp.pomoGet();
+  paintPomo(st.settings);
+  loadMusicOptions(st.settings);
+}
+document.querySelectorAll('[data-pomo]').forEach((el) => {
+  el.onchange = async () => {
+    const k = el.dataset.pomo;
+    const v = el.type === 'checkbox' ? el.checked : el.value;
+    const st = await sp.pomoSet({ [k]: v });
+    paintPomo(st.settings);
+  };
+});
+document.querySelectorAll('#presetChips button').forEach((b) => {
+  b.onclick = async () => { if (b.dataset.preset === 'custom') return; paintPomo((await sp.pomoSet({ preset: b.dataset.preset })).settings); };
+});
+$('musicSel').onchange = async () => {
+  const o = $('musicSel').selectedOptions[0];
+  const uri = $('musicSel').value;
+  const st = await sp.pomoSet({ musicUri: uri, musicName: uri ? o.textContent : '' });
+  musicOptsFor = null;
+  $('musicNow').textContent = uri ? ('Wybrana: ' + o.textContent) : 'Gdy nic nie wybierzesz, gra oficjalna playlista Spotify do pracy.';
+  paintPomo(st.settings);
+};
+$('soundWork').onclick = () => playPomoSound('work');
+$('soundBreak').onclick = () => playPomoSound('break');
+sp.onPomo((st) => { if (!$('tab-pomodoro').hidden) paintPomo(st.settings); });
 let lastTab = 'style';
 try { lastTab = localStorage.getItem('settingsTab') || 'style'; } catch {}
 showTab(lastTab);
