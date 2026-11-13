@@ -10,7 +10,7 @@ if (!window.sp) {
     onLoggedOut() {}, onUpdate() {}, onSettings() {},
     getSettings: async () => ({ theme: 'liquid', layout: 'standard' }), setSettings: noop, openSettings: noop,
     state: async () => ({ auth: true, state: null }), toggle: noop, next: noop, prev: noop, shuffle: noop, seek: noop, volume: noop,
-    libContains: noop, libSet: noop, relogin: noop,
+    libContains: noop, libSet: noop, relogin: noop, playlistTracks: noop,
     playlists: async () => ({ ok: true, items: [] }), playPlaylist: noop, hide: noop, quit: noop, openUrl: noop,
   };
 }
@@ -264,6 +264,7 @@ $('vol').oninput = () => {
 // ---------- Playlisty ----------
 function setPlaylists(open) {
   plOpen = open;
+  if (!open && trOpen) hideTracks();
   $('player').classList.toggle('pl-mode', open);   // playlisty zastępują playera, okno bez zmian
   $('plBtn').classList.toggle('on', open);
   $('plBtn').title = open ? 'Wróć do playera' : 'Playlisty';
@@ -272,8 +273,8 @@ function setPlaylists(open) {
   if (open) { $('filter').focus(); if (!PREVIEW && (!plLoaded || Date.now() - plAt > 3 * 60 * 1000)) loadPlaylists(); }
   else { $('filter').value = ''; $('filter').blur(); renderPlaylists(); }
 }
-$('plBtn').onclick = () => setPlaylists(!plOpen);
-document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && plOpen) setPlaylists(false); });
+$('plBtn').onclick = () => { if (trOpen) hideTracks(); else setPlaylists(!plOpen); };
+document.addEventListener('keydown', (e) => { if (e.key !== 'Escape') return; if (trOpen) hideTracks(); else if (plOpen) setPlaylists(false); });
 $('filter').addEventListener('keydown', (e) => {
   if (e.key !== 'Enter') return;
   const uri = parseSpotifyLink($('filter').value);
@@ -317,7 +318,7 @@ async function playUri(uri) {
   setTimeout(poll, 500);
 }
 
-const NAME_HINT = 'Najedź na okładkę, aby zobaczyć nazwę';
+const NAME_HINT = 'Klik: odtwórz  ·  ikona ≡ lub prawy klik: utwory';
 // po zjechaniu z okładki wracamy do powiadomienia (jeśli trwa) albo do podpowiedzi
 function resetPlName() { const n = $('plName'); n.textContent = noticeText || NAME_HINT; n.classList.toggle('on', !!noticeText); n.classList.toggle('bad', !!noticeText && noticeBad); }
 // w układzie minimalistycznym lista to poziomy rząd: kółko myszy przewija w bok
@@ -345,6 +346,12 @@ function renderPlaylists() {
     el.onmouseenter = () => { $('plName').textContent = p.name; $('plName').classList.add('on'); };
     el.onmouseleave = resetPlName;
     el.onclick = () => playUri(p.uri);
+    el.oncontextmenu = (e) => { e.preventDefault(); showTracks(p); };
+    const pk = document.createElement('button');
+    pk.className = 'peek'; pk.title = 'Pokaż utwory';
+    pk.innerHTML = '<svg><use href="#i-list"/></svg>';
+    pk.onclick = (e) => { e.stopPropagation(); showTracks(p); };
+    el.append(pk);
     box.appendChild(el);
   }
   if (!plLoaded && !q) { // lista nie wczytała się: kafelek „ponów” zamiast cichego braku playlist
@@ -361,11 +368,84 @@ function renderPlaylists() {
 }
 
 function markCurrent() {
+  document.querySelectorAll('.tr').forEach((el) => el.classList.toggle('cur', !!st && el.dataset.uri === st.uri));
   document.querySelectorAll('.pl').forEach((el) => el.classList.toggle('cur', !!st && !!st.context && (el.dataset.uri === st.context || (!!el.dataset.liked && /:collection$/.test(st.context)))));
 }
 
 $('filter').oninput = renderPlaylists;
 
+// ---------- Wybór utworu z playlisty ----------
+// Wejście: ikona ≡ na kafelku albo prawy klik. Playlisty tylko własne/współdzielone (ograniczenie Spotify od 2026).
+let trOpen = false, trPl = null, trItems = [], trOffset = 0, trMore = false, trLoading = false, trErr = '';
+
+function showTracks(p) {
+  trOpen = true; trPl = p; trItems = []; trOffset = 0; trMore = false; trErr = '';
+  $('player').classList.add('tr-mode');          // pl-mode zostaje (okno i układ bez zmian), tr-mode podmienia zawartość
+  $('trTitle').hidden = false;
+  $('trTitle').textContent = p.name;
+  $('filter').blur();
+  renderTracks();
+  loadTracks();
+}
+function hideTracks() {
+  trOpen = false; trPl = null;
+  $('player').classList.remove('tr-mode');
+  $('trTitle').hidden = true;
+  $('trList').scrollTop = 0;
+}
+async function loadTracks() {
+  if (trLoading || !trPl) return;
+  trLoading = true; renderTracks();
+  const pl = trPl;
+  let r;
+  try { r = await sp.playlistTracks(pl.uri, trOffset); } catch { r = { ok: false, error: 'Brak połączenia' }; }
+  trLoading = false;
+  if (trPl !== pl || !trOpen) return; // użytkownik zdążył wyjść
+  if (r.ok) { trItems = trItems.concat(r.items); trOffset += 50; trMore = r.more; trErr = ''; }
+  else trErr = r.needScope ? 'Brak uprawnień do playlist. Wyloguj i zaloguj ponownie.' : (r.error || 'Nie udało się pobrać utworów');
+  renderTracks();
+}
+function renderTracks() {
+  const box = $('trList');
+  const keep = box.scrollTop;
+  box.innerHTML = '';
+  trItems.forEach((t, i) => {
+    const el = document.createElement('div');
+    el.className = 'tr' + (st && st.uri === t.uri ? ' cur' : '');
+    el.dataset.uri = t.uri;
+    const n = Object.assign(document.createElement('span'), { className: 'n', textContent: i + 1 });
+    const tt = document.createElement('span');
+    tt.className = 'tt';
+    const b = Object.assign(document.createElement('b'), { textContent: t.name });
+    const a = Object.assign(document.createElement('i'), { textContent: t.artist });
+    tt.append(b, a);
+    const d = Object.assign(document.createElement('span'), { className: 'd', textContent: fmt(t.ms) });
+    el.append(n, tt, d);
+    el.onclick = () => playTrack(i);
+    box.appendChild(el);
+  });
+  const note = (msg) => box.appendChild(Object.assign(document.createElement('div'), { className: 'empty', textContent: msg }));
+  if (trLoading) note('Ładowanie…');
+  else if (trErr) note(trErr);
+  else if (!trItems.length) note('Brak utworów');
+  box.scrollTop = keep;
+}
+$('trList').addEventListener('scroll', () => {
+  const b = $('trList');
+  if (trMore && !trLoading && b.scrollTop + b.clientHeight > b.scrollHeight - 40) loadTracks(); // dociągnij kolejną stronę
+});
+async function playTrack(i) {
+  const t = trItems[i], pl = trPl;
+  if (!t || !pl) return;
+  flash('');
+  // Polubione: odtwarzamy wskazane utwory po kolei (do 50 od klikniętego); playlista: kontekst + start od utworu
+  const opts = pl.uri === LIKED.uri ? { uris: trItems.slice(i, i + 50).map((x) => x.uri) } : { offsetUri: t.uri };
+  setPlaylists(false); // wracamy do playera
+  const r = await sp.playPlaylist(pl.uri, opts);
+  if (!r.ok) flash(r.error);
+  else if (r.opened) flash('Otwarto w aplikacji Spotify', true);
+  setTimeout(poll, 500);
+}
 // ---------- Serduszko: dodaj/usuń bieżący utwór z polubionych ----------
 const savedCache = new Map();   // uri utworu -> czy polubiony
 let heartChecking = null, heartBusy = false;

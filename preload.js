@@ -20,6 +20,7 @@ contextBridge.exposeInMainWorld('sp', {
   volume: call('player:volume'),
   playlists: call('playlists:get'),
   playPlaylist: call('playlists:play'),
+  playlistTracks: call('playlists:tracks'),
   getSettings: call('settings:get'),
   setSettings: call('settings:set'),
   openSettings: call('settings:open'),

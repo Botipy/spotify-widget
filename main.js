@@ -1,4 +1,4 @@
-﻿const { app, BrowserWindow, Tray, Menu, ipcMain, nativeImage, shell, screen, safeStorage } = require('electron');
+const { app, BrowserWindow, Tray, Menu, ipcMain, nativeImage, shell, screen, safeStorage } = require('electron');
 const path = require('path');
 const fs = require('fs');
 const http = require('http');
@@ -171,7 +171,13 @@ async function api(method, endpoint, body, retry = true) {
   return { status: res.status, data };
 }
 
-const errMsg = (r) => (r.data && r.data.error && r.data.error.message) || (r.status === 0 ? 'Brak połączenia z internetem' : `Błąd ${r.status}`);
+const errMsg = (r) => {
+  const raw = r.data && r.data.error && r.data.error.message;
+  // konto spoza listy testerów aplikacji w trybie deweloperskim Spotify
+  if (r.status === 403 && raw && /dashboard|not registered/i.test(raw)) return 'Twojego konta nie ma na liście testerów aplikacji. Poproś autora o dodanie Twojego e-maila w panelu Spotify.';
+  if (r.status === 429) return 'Spotify chwilowo ogranicza zapytania. Spróbuj za chwilę.';
+  return raw || (r.status === 0 ? 'Brak połączenia z internetem' : `Błąd ${r.status}`);
+};
 
 function simplifyState(d) {
   if (!d || !d.item) return null;
@@ -266,20 +272,28 @@ ipcMain.handle('playlists:get', async () => {
   return { ok: true, items: out };
 });
 const LIKED_URI = 'spotify:collection:tracks';
-ipcMain.handle('playlists:play', async (_e, openUri) => {
+// opts (opcjonalnie): { offsetUri } = zacznij od tego utworu w playliście; { uris } = odtwórz dokładnie te utwory (Polubione)
+ipcMain.handle('playlists:play', async (_e, openUri, opts = {}) => {
   let uri = openUri;
   if (openUri === LIKED_URI) {
     // Polubione utwory = kontekst "spotify:user:<id>:collection"
     const me = await api('GET', '/me');
     if (me.data && me.data.id) uri = `spotify:user:${me.data.id}:collection`;
   }
-  let r = await api('PUT', '/me/player/play', { context_uri: uri });
+  const body = opts.uris
+    ? { uris: opts.uris }
+    : { context_uri: uri, ...(opts.offsetUri ? { offset: { uri: opts.offsetUri } } : {}) };
+  let r = await api('PUT', '/me/player/play', body);
   if (r.status === 404) {
     // brak aktywnego urządzenia: przełącz na pierwsze dostępne (np. Spotify na PC)
     const d = await api('GET', '/me/player/devices');
     const dev = d.data && d.data.devices && d.data.devices[0];
     if (!dev) return { ok: false, error: 'Brak urządzenia. Uruchom Spotify na komputerze.' };
-    r = await api('PUT', `/me/player/play?device_id=${dev.id}`, { context_uri: uri });
+    r = await api('PUT', `/me/player/play?device_id=${dev.id}`, body);
+  }
+  if (r.status >= 300 && opts.offsetUri && /^spotify:track:[A-Za-z0-9]+$/.test(opts.offsetUri)) {
+    shell.openExternal(opts.offsetUri); // wybrany utwór: otwórz w aplikacji Spotify
+    return { ok: true, opened: true };
   }
   if (r.status >= 300 && (openUri === LIKED_URI || /^spotify:(playlist|album|artist|show):[A-Za-z0-9]+$/.test(openUri))) {
     // API odmówiło (np. DJ / playlisty algorytmiczne) - otwórz w aplikacji Spotify
@@ -287,6 +301,34 @@ ipcMain.handle('playlists:play', async (_e, openUri) => {
     return { ok: true, opened: true };
   }
   return r.status < 300 ? { ok: true } : { ok: false, error: errMsg(r) };
+});
+
+// Utwory playlisty / Polubionych do wyboru. Od lutego 2026 lista utworów (GET /playlists/{id}/items) jest dostępna tylko
+// dla playlist użytkownika lub współdzielonych (nie dla DJ-a, miksów Spotify ani cudzych), stąd komunikat „restricted”.
+ipcMain.handle('playlists:tracks', async (_e, uri, offset = 0) => {
+  const limit = 50;
+  let r;
+  if (uri === LIKED_URI) {
+    for (const base of ['/me/tracks', '/me/library/tracks']) {
+      r = await api('GET', `${base}?limit=${limit}&offset=${offset}`);
+      if (r.status === 200) break;
+    }
+  } else {
+    const id = (String(uri).match(/^spotify:playlist:([A-Za-z0-9]+)$/) || [])[1];
+    if (!id) return { ok: false, error: 'To nie jest playlista' };
+    r = await api('GET', `/playlists/${id}/items?limit=${limit}&offset=${offset}&additional_types=track`);
+    if (r.status === 404 || r.status === 405) r = await api('GET', `/playlists/${id}/tracks?limit=${limit}&offset=${offset}`);
+  }
+  if (r.status === 403 || r.status === 404) {
+    if (needsScope(r)) return { ok: false, needScope: true };
+    return { ok: false, restricted: true, error: 'Spotify nie udostępnia utworów tej playlisty (tylko własne lub współdzielone). Możesz ją odtworzyć w całości.' };
+  }
+  if (r.status !== 200 || !r.data) return { ok: false, error: errMsg(r) };
+  const items = (r.data.items || [])
+    .map((e) => (e && (e.item || e.track)) || null)
+    .filter((t) => t && t.uri && t.type !== 'episode' && !t.is_local)
+    .map((t) => ({ uri: t.uri, name: t.name, artist: (t.artists || []).map((a) => a.name).join(', '), ms: t.duration_ms || 0 }));
+  return { ok: true, items, total: r.data.total || items.length, more: !!r.data.next };
 });
 
 // ---------- Okno ----------

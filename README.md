@@ -65,6 +65,8 @@ Jeśli repo jest prywatne, znajomy nie pobierze pliku z Releases, dopóki nie do
   Na górze listy jest **DJ (Spotify AI)**.
 - **Serduszko (♥)** obok przycisku losowo – dodaje bieżący utwór do polubionych (i usuwa z nich). Przy pierwszym użyciu
   Spotify poprosi o dodatkową zgodę (dostęp do biblioteki); wystarczy ją zatwierdzić w przeglądarce.
+- **Wybór utworu z playlisty** – najedź na okładkę i kliknij ikonę ≡ (albo prawy klik), żeby zobaczyć utwory i zagrać wybrany.
+  Działa dla Twoich i współdzielonych playlist oraz Polubionych (Spotify nie udostępnia utworów playlist cudzych, DJ-a i miksów).
 - **Przeciąganie** – złap za górny pasek albo okładkę. Pozycja jest zapamiętywana.
 - **Ikona w zasobniku** – pokaż/ukryj, zawsze na wierzchu, start z Windowsem, wylogowanie, zamknij.
 
