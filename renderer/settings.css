@@ -4,7 +4,6 @@ html, body { background: #131316; color: #f2f2f5; font-family: 'Segoe UI Variabl
 body { padding: 22px 24px 28px; min-height: 100vh; }
 
 header h1 { font-size: 22px; font-weight: 700; letter-spacing: -.01em; }
-header p { margin-top: 4px; font-size: 13px; color: #9a9aa6; }
 
 .controls { display: flex; flex-wrap: wrap; gap: 14px 28px; margin: 18px 0 20px; }
 .group { display: flex; align-items: center; gap: 10px; }
@@ -31,3 +30,39 @@ header p { margin-top: 4px; font-size: 13px; color: #9a9aa6; }
 .name { font-size: 14px; font-weight: 700; }
 .badge { font-size: 11px; font-weight: 700; color: #04210d; background: #1ed760; border-radius: 99px; padding: 2px 9px; opacity: 0; transition: opacity .15s; }
 .card.sel .badge { opacity: 1; }
+
+/* ---------- zakładki i ustawienia aplikacji ---------- */
+header { position: sticky; top: 0; z-index: 5; margin: -22px -24px 0; padding: 18px 24px 0; background: #131316; border-bottom: 1px solid #26262e; }
+header h1 { margin-bottom: 12px; }
+#tabs { display: flex; gap: 4px; }
+#tabs button { border: 0; background: none; color: #9a9aa6; font: inherit; font-size: 13px; font-weight: 600; padding: 10px 16px 11px; border-bottom: 2px solid transparent; cursor: pointer; transition: color .15s, border-color .15s; }
+#tabs button:hover { color: #fff; }
+#tabs button.on { color: #fff; border-bottom-color: #1ed760; }
+.tab { padding-top: 18px; }
+.lead { font-size: 13px; color: #9a9aa6; margin-bottom: 4px; }
+.tab > .controls { margin-top: 14px; }
+
+.rows { margin-top: 14px; border: 1px solid #26262e; border-radius: 14px; background: #1a1a1f; overflow: hidden; max-width: 640px; }
+.row { display: flex; align-items: center; justify-content: space-between; gap: 18px; padding: 14px 16px; border-bottom: 1px solid #26262e; cursor: default; }
+.row:last-child { border-bottom: 0; }
+label.row { cursor: pointer; }
+.row .txt { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+.row .txt b { font-size: 14px; font-weight: 600; }
+.row .txt small { font-size: 12px; color: #8a8a96; line-height: 1.4; }
+.btn { flex-shrink: 0; border: 1px solid #34343e; background: #24242b; color: #f2f2f5; font: inherit; font-size: 13px; font-weight: 600; padding: 8px 14px; border-radius: 10px; cursor: pointer; transition: background .15s, border-color .15s; }
+.btn:hover:not(:disabled) { background: #2e2e37; border-color: #44444f; }
+.btn.go { background: #1ed760; border-color: #1ed760; color: #04210d; }
+.btn.go:hover:not(:disabled) { background: #3be477; }
+.btn:disabled { opacity: .45; cursor: default; }
+
+/* przełącznik (checkbox jako suwak) */
+.sw { appearance: none; -webkit-appearance: none; flex-shrink: 0; width: 40px; height: 22px; border-radius: 99px; background: #3a3a44; position: relative; cursor: pointer; transition: background .18s; outline: none; }
+.sw::after { content: ''; position: absolute; left: 3px; top: 3px; width: 16px; height: 16px; border-radius: 50%; background: #fff; transition: transform .18s; box-shadow: 0 1px 3px rgba(0, 0, 0, .4); }
+.sw:checked { background: #1ed760; }
+.sw:checked::after { transform: translateX(18px); }
+.sw:disabled { opacity: .4; cursor: default; }
+.sw:focus-visible { box-shadow: 0 0 0 3px rgba(30, 215, 96, .35); }
+
+.soon { margin-top: 14px; max-width: 560px; padding: 22px; border: 1px dashed #34343e; border-radius: 14px; background: #17171b; }
+.soon h2 { font-size: 16px; margin-bottom: 8px; }
+.soon p { font-size: 13px; line-height: 1.55; color: #9a9aa6; }

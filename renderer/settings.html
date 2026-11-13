@@ -3,33 +3,84 @@
 <head>
   <meta charset="utf-8">
   <meta http-equiv="Content-Security-Policy" content="default-src 'self'; frame-src 'self'; img-src 'self' data: https:; style-src 'self' 'unsafe-inline'">
-  <title>Spotify Widget – Wygląd</title>
+  <title>Spotify Widget – Ustawienia</title>
   <link rel="stylesheet" href="settings.css">
 </head>
 <body>
   <header>
-    <h1>Wygląd</h1>
-    <p>Wybierz preset i rozmiar panelu. Zmiany widać od razu na pulpicie.</p>
+    <h1>Ustawienia</h1>
+    <nav id="tabs" role="tablist">
+      <button role="tab" data-tab="style">Style</button>
+      <button role="tab" data-tab="behavior">Zachowanie</button>
+      <button role="tab" data-tab="system">System</button>
+      <button role="tab" data-tab="pomodoro">Pomodoro</button>
+    </nav>
   </header>
 
-  <section class="controls">
-    <div class="group">
-      <span class="label">Rozmiar</span>
-      <div class="seg" id="layoutSeg">
-        <button data-layout="standard">Standardowy</button>
-        <button data-layout="compact">Minimalistyczny</button>
+  <!-- STYLE: presety wyglądu i rozmiar panelu -->
+  <section class="tab" id="tab-style" role="tabpanel">
+    <p class="lead">Wybierz preset i rozmiar panelu. Zmiany widać od razu na pulpicie.</p>
+    <div class="controls">
+      <div class="group">
+        <span class="label">Rozmiar</span>
+        <div class="seg" id="layoutSeg">
+          <button data-layout="standard">Standardowy</button>
+          <button data-layout="compact">Minimalistyczny</button>
+        </div>
+      </div>
+      <div class="group">
+        <span class="label">Podgląd</span>
+        <div class="seg" id="modeSeg">
+          <button data-mode="player">Odtwarzacz</button>
+          <button data-mode="playlists">Playlisty</button>
+        </div>
       </div>
     </div>
-    <div class="group">
-      <span class="label">Podgląd</span>
-      <div class="seg" id="modeSeg">
-        <button data-mode="player">Odtwarzacz</button>
-        <button data-mode="playlists">Playlisty</button>
+    <main id="grid"></main>
+  </section>
+
+  <!-- ZACHOWANIE -->
+  <section class="tab" id="tab-behavior" role="tabpanel" hidden>
+    <p class="lead">Jak panel zachowuje się na pulpicie.</p>
+    <div class="rows">
+      <label class="row">
+        <span class="txt"><b>Zawsze na wierzchu</b><small>Panel nie chowa się za innymi oknami.</small></span>
+        <input type="checkbox" class="sw" data-app="onTop">
+      </label>
+      <label class="row">
+        <span class="txt"><b>Uruchamiaj z Windowsem</b><small id="loginNote">Widget startuje razem z systemem.</small></span>
+        <input type="checkbox" class="sw" data-app="openAtLogin">
+      </label>
+    </div>
+  </section>
+
+  <!-- SYSTEM -->
+  <section class="tab" id="tab-system" role="tabpanel" hidden>
+    <p class="lead">Wersja, aktualizacje i konto.</p>
+    <div class="rows">
+      <div class="row">
+        <span class="txt"><b id="verTitle">Wersja</b><small id="updMsg">Sprawdź, czy jest nowsza wersja.</small></span>
+        <button class="btn" id="updBtn">Sprawdź aktualizacje</button>
+      </div>
+      <label class="row">
+        <span class="txt"><b>Aktualizuj automatycznie przy starcie</b><small>Przy uruchomieniu pobiera nową wersję, instaluje ją i restartuje widget.</small></span>
+        <input type="checkbox" class="sw" data-app="autoUpdateOnStart">
+      </label>
+      <div class="row">
+        <span class="txt"><b>Konto Spotify</b><small id="accMsg">Sprawdzam…</small></span>
+        <button class="btn" id="logoutBtn">Wyloguj</button>
       </div>
     </div>
   </section>
 
-  <main id="grid"></main>
+  <!-- POMODORO (wkrótce) -->
+  <section class="tab" id="tab-pomodoro" role="tabpanel" hidden>
+    <div class="soon">
+      <h2>Pomodoro: wkrótce</h2>
+      <p>Timer z własnym układem. Tutaj ustawisz czasy (Focus, krótka i długa przerwa, liczba sesji) i wybierzesz gotowy preset czasów, np. 25/5, 45/15 albo 50/10.</p>
+    </div>
+  </section>
+
   <script src="settings.js"></script>
 </body>
 </html>

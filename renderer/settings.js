@@ -1,4 +1,4 @@
-﻿const THEMES = [
+const THEMES = [
   ['liquid', 'Liquid Glass'], ['retro', 'Retro'], ['terminal', 'Terminal'], ['gameboy', 'Game Boy'], ['neon', 'Neon'],
   ['vaporwave', 'Vaporwave'], ['win98', 'Win98'], ['winamp', 'Winamp'], ['glass', 'Glass'], ['y2k', 'Y2K'], ['sakura', 'Sakura'], ['higanbana', 'Higanbana'],
 ];
@@ -68,5 +68,46 @@ sp.onSettings((s) => {
   markSelection();
 })();
 
+// ---------- Zakładki ----------
+const TABS = ['style', 'behavior', 'system', 'pomodoro'];
+function showTab(name) {
+  if (!TABS.includes(name)) name = 'style';
+  for (const t of TABS) document.getElementById('tab-' + t).hidden = t !== name;
+  document.querySelectorAll('#tabs button').forEach((b) => { b.classList.toggle('on', b.dataset.tab === name); b.setAttribute('aria-selected', b.dataset.tab === name); });
+  try { localStorage.setItem('settingsTab', name); } catch {}
+  if (name === 'system' || name === 'behavior') loadApp();
+}
+document.querySelectorAll('#tabs button').forEach((b) => { b.onclick = () => showTab(b.dataset.tab); });
 
+// ---------- Zachowanie i System (te same opcje są też w menu zasobnika) ----------
+const $ = (id) => document.getElementById(id);
+let appState = null;
+async function loadApp() {
+  appState = await sp.appGet();
+  document.querySelectorAll('.sw[data-app]').forEach((c) => { c.checked = !!appState[c.dataset.app]; });
+  $('verTitle').textContent = 'Wersja ' + appState.version;
+  // autostart i aktualizacje działają tylko w zainstalowanej wersji (nie przy uruchomieniu z folderu projektu)
+  document.querySelector('.sw[data-app="openAtLogin"]').disabled = !appState.packaged;
+  $('loginNote').textContent = appState.packaged ? 'Widget startuje razem z systemem.' : 'Dostępne tylko w zainstalowanej wersji.';
+  $('updBtn').disabled = !appState.packaged;
+  $('updBtn').textContent = appState.updateReady ? 'Zainstaluj i zrestartuj' : 'Sprawdź aktualizacje';
+  $('updBtn').classList.toggle('go', !!appState.updateReady);
+  if (!appState.packaged) $('updMsg').textContent = 'Aktualizacje działają tylko w zainstalowanej wersji.';
+  else if (appState.updateReady) $('updMsg').textContent = 'Nowa wersja jest pobrana i gotowa do instalacji.';
+  $('accMsg').textContent = appState.loggedIn ? 'Zalogowano. Wylogowanie wyczyści zapisany dostęp do konta.' : 'Niezalogowano.';
+  $('logoutBtn').disabled = !appState.loggedIn;
+}
+document.querySelectorAll('.sw[data-app]').forEach((c) => { c.onchange = () => sp.appSet(c.dataset.app, c.checked); });
+$('updBtn').onclick = async () => {
+  if (appState && appState.updateReady) { sp.appInstallUpdate(); return; }
+  $('updMsg').textContent = 'Sprawdzam…';
+  const r = await sp.appCheckUpdates();
+  if (!r.ok) $('updMsg').textContent = r.error;
+};
+$('logoutBtn').onclick = async () => { await sp.appLogout(); await loadApp(); $('accMsg').textContent = 'Wylogowano.'; };
+sp.onUpdate((msg) => { $('updMsg').textContent = msg; if (/gotowa|instaluję/i.test(msg)) loadApp(); });
+window.addEventListener('focus', () => { if (!$('tab-behavior').hidden || !$('tab-system').hidden) loadApp(); }); // zmiany z menu zasobnika
 
+let lastTab = 'style';
+try { lastTab = localStorage.getItem('settingsTab') || 'style'; } catch {}
+showTab(lastTab);

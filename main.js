@@ -357,12 +357,44 @@ ipcMain.handle('settings:set', (_e, patch) => {
 });
 ipcMain.handle('settings:open', () => openSettings());
 
+// ---------- Ustawienia aplikacji (zakładki Zachowanie i System w panelu; te same opcje są w menu zasobnika) ----------
+ipcMain.handle('app:get', () => ({
+  version: app.getVersion(),
+  packaged: app.isPackaged,                       // autostart i aktualizacje działają tylko w zainstalowanej wersji
+  onTop: store.onTop !== false,
+  openAtLogin: app.isPackaged ? app.getLoginItemSettings().openAtLogin : false,
+  autoUpdateOnStart: store.autoUpdateOnStart !== false,
+  updateReady,
+  loggedIn: !!tokens,
+}));
+ipcMain.handle('app:set', (_e, key, value) => {
+  const v = !!value;
+  if (key === 'onTop') setOnTop(v);
+  else if (key === 'openAtLogin') { if (app.isPackaged) app.setLoginItemSettings({ openAtLogin: v }); }
+  else if (key === 'autoUpdateOnStart') { store.autoUpdateOnStart = v; saveStore(); }
+  else return false;
+  buildTrayMenu(); // synchronizuj zaznaczenia w menu zasobnika
+  return true;
+});
+ipcMain.handle('app:checkUpdates', () => {
+  if (!autoUpdater) return { ok: false, error: 'Aktualizacje działają tylko w zainstalowanej wersji.' };
+  manualCheck = true;
+  autoUpdater.checkForUpdates().catch(() => say('Nie udało się sprawdzić aktualizacji'));
+  return { ok: true };
+});
+ipcMain.handle('app:installUpdate', () => { if (autoUpdater && updateReady) autoUpdater.quitAndInstall(true, true); return !!(autoUpdater && updateReady); });
+ipcMain.handle('app:logout', () => {
+  tokens = null; delete store.refresh; saveStore();
+  if (win && !win.isDestroyed()) win.webContents.send('auth:loggedOut');
+  return true;
+});
+
 let settingsWin = null;
 function openSettings() {
   if (settingsWin && !settingsWin.isDestroyed()) { settingsWin.show(); settingsWin.focus(); return; }
   settingsWin = new BrowserWindow({
     width: 720, height: 740, minWidth: 560, minHeight: 480,
-    title: 'Spotify Widget – Wygląd', backgroundColor: '#141416', autoHideMenuBar: true,
+    title: 'Spotify Widget – Ustawienia', backgroundColor: '#141416', autoHideMenuBar: true,
     icon: path.join(__dirname, 'assets', 'icon.png'),
     webPreferences: { preload: path.join(__dirname, 'preload.js'), contextIsolation: true, nodeIntegration: false },
   });
@@ -413,7 +445,7 @@ function createWindow() {
 let autoUpdater = null;
 let updateReady = false;
 let manualCheck = false;
-const say = (m) => { if (win && !win.isDestroyed()) win.webContents.send('update:status', m); };
+const say = (m) => { for (const w of [win, settingsWin]) if (w && !w.isDestroyed()) w.webContents.send('update:status', m); };
 
 function setupUpdater() {
   if (!app.isPackaged) return; // tylko w zainstalowanej wersji
