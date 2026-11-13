@@ -447,3 +447,7 @@ html[data-theme="higanbana"] .pm { border-color: rgba(229, 38, 43, .55); }
 html[data-theme="sakura"] .pm { border-color: rgba(232, 112, 154, .6); color: #6b1d3f; }
 html[data-theme="neon"] .pm { border-color: rgba(255, 43, 214, .55); }
 html[data-theme="neon"] .pm.on { box-shadow: 0 0 10px rgba(38, 230, 255, .7); }
+
+/* Pomodoro: płaskie style bez poświaty wokół pierścienia (nie pasuje do nich i odsłaniała krawędzie) */
+html[data-theme="retro"] .ring .fg, html[data-theme="gameboy"] .ring .fg, html[data-theme="win98"] .ring .fg,
+html[data-theme="glass"] .ring .fg, html[data-theme="y2k"] .ring .fg, html[data-theme="sakura"] .ring .fg { filter: none; }

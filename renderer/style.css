@@ -411,3 +411,6 @@ html[data-layout="compact"] #pomo .pomo-info { grid-column: 2; grid-row: 2; flex
 html[data-layout="compact"] #pomo .pomo-ctl { grid-column: 2; grid-row: 3; align-self: center; justify-content: center; gap: 10px; }
 html[data-layout="compact"] #pomo .play { width: 38px; height: 38px; }
 html[data-layout="compact"] #pomo .ic.big { width: 32px; height: 32px; }
+
+/* pierścień: poświata nie może być przycinana do prostokąta elementu SVG (widać było proste krawędzie) */
+.ring svg { overflow: visible; }
