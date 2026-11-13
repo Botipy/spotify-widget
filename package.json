@@ -5,6 +5,7 @@
   "description": "Minimalistyczna nakładka Spotify na pulpit",
   "main": "main.js",
   "author": "Botipy",
+  "license": "MIT",
   "scripts": {
     "start": "electron .",
     "dist": "electron-builder --win --publish never"

@@ -1,4 +1,4 @@
-﻿# Spotify Widget
+# Spotify Widget
 
 Minimalistyczna nakładka Spotify na pulpit (Windows). Mały, zawsze widoczny panel:
 okładka, tytuł, pasek postępu, play/pauza/skip, losowo, głośność i szybki wybór playlist.
@@ -91,3 +91,6 @@ GitHub Actions zbuduje instalator i dołączy go do Release automatycznie
 Ustawienia i token odświeżania są w `%APPDATA%\spotify-widget` (token szyfrowany
 przez Windows). Nakładka łączy się wyłącznie ze Spotify.
 
+## Licencja
+
+MIT, zobacz plik [LICENSE](LICENSE).
