@@ -343,16 +343,47 @@ function setupUpdater() {
   ({ autoUpdater } = require('electron-updater'));
   autoUpdater.autoDownload = true;
   autoUpdater.autoInstallOnAppQuit = true;
+  // Faza startowa: pierwsze sprawdzenie po uruchomieniu (np. z autostartu Windowsa).
+  // Jeśli jest nowsza wersja, instalujemy ją i restartujemy automatycznie. Późniejsze sprawdzenia
+  // (co 6 h) nie przerywają słuchania: instalują dopiero po zamknięciu albo z menu.
+  let startupPhase = true;
+  let startupTries = 0;
+  setTimeout(() => { startupPhase = false; }, 10 * 60 * 1000);
+
   autoUpdater.on('update-available', (i) => say(`Pobieram aktualizację ${i.version}…`));
-  autoUpdater.on('update-not-available', () => { if (manualCheck) say(`Masz najnowszą wersję (${app.getVersion()})`); manualCheck = false; });
+  autoUpdater.on('update-not-available', () => {
+    startupPhase = false;
+    // sprzątanie: pobrany wcześniej instalator (ok. 230 MB w folderze cache) nie jest już potrzebny
+    if (process.env.LOCALAPPDATA) {
+      fs.rm(path.join(process.env.LOCALAPPDATA, 'spotify-widget-updater'), { recursive: true, force: true }, () => {});
+    }
+    if (manualCheck) say(`Masz najnowszą wersję (${app.getVersion()})`);
+    manualCheck = false;
+  });
   autoUpdater.on('update-downloaded', (i) => {
     updateReady = true;
-    say(`Aktualizacja ${i.version} gotowa. Zainstaluje się po zamknięciu.`);
     buildTrayMenu();
+    // bezpiecznik przed pętlą restartów: tej samej wersji nie próbujemy automatycznie częściej niż co 15 min
+    const last = store.autoInstall;
+    const recent = last && last.version === i.version && Date.now() - last.at < 15 * 60 * 1000;
+    if (startupPhase && store.autoUpdateOnStart !== false && !recent) {
+      startupPhase = false;
+      store.autoInstall = { version: i.version, at: Date.now() };
+      saveStore();
+      say(`Aktualizacja ${i.version}: instaluję i restartuję…`);
+      setTimeout(() => autoUpdater.quitAndInstall(true, true), 2500); // chwila, żeby komunikat był widoczny
+    } else {
+      say(`Aktualizacja ${i.version} gotowa. Zainstaluje się po zamknięciu.`);
+    }
   });
   autoUpdater.on('error', () => { if (manualCheck) say('Nie udało się sprawdzić aktualizacji'); manualCheck = false; });
+
   const check = () => autoUpdater.checkForUpdates().catch(() => {});
-  check();
+  // po starcie systemu sieć bywa jeszcze niegotowa: ponawiamy sprawdzenie co 30 s (do 8 prób)
+  const startupCheck = () => autoUpdater.checkForUpdates().catch(() => {
+    if (startupPhase && ++startupTries < 8) setTimeout(startupCheck, 30000);
+  });
+  startupCheck();
   setInterval(check, 6 * 60 * 60 * 1000);
 }
 
@@ -366,6 +397,8 @@ function buildTrayMenu() {
       click: (m) => app.setLoginItemSettings({ openAtLogin: m.checked }) },
     { type: 'separator' },
     { label: `Wersja ${app.getVersion()}`, enabled: false },
+    { label: 'Aktualizuj automatycznie przy starcie', type: 'checkbox', checked: store.autoUpdateOnStart !== false,
+      click: (m) => { store.autoUpdateOnStart = m.checked; saveStore(); } },
     updateReady
       ? { label: 'Zainstaluj aktualizację i zrestartuj', click: () => autoUpdater.quitAndInstall(true, true) }
       : { label: 'Sprawdź aktualizacje', enabled: !!autoUpdater, click: () => { manualCheck = true; autoUpdater.checkForUpdates().catch(() => say('Nie udało się sprawdzić aktualizacji')); } },
