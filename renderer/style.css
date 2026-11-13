@@ -315,3 +315,8 @@ html[data-layout="compact"] #plName { margin-top: 0; height: 14px; line-height: 
 #heart:disabled { opacity: .3; cursor: default; }
 .controls .side.left { gap: 2px; }
 html[data-layout="compact"] .controls .side.left .ic { width: 24px; height: 24px; }
+
+/* powiadomienia: w linii wykonawcy / pod okładkami playlist, nie na przyciskach */
+#card .artist.notice { color: var(--accent); font-weight: 600; }
+#card .artist.notice.bad, #card #plName.bad { color: #e5534b; }
+#status { display: none; }

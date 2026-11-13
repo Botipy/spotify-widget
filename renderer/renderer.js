@@ -48,15 +48,29 @@ function show(view) {
   $('player').hidden = view !== 'player';
 }
 
-let flashTimer = null;
+// Powiadomienia (polubienia, aktualizacje, błędy) nie zasłaniają przycisków: na kilka sekund podmieniają linię
+// wykonawcy w playerze, a w widoku playlist linię z nazwą pod okładkami.
+const DEFAULT_ARTIST = 'Włącz coś w Spotify albo wybierz playlistę';
+let flashTimer = null, noticeText = '', noticeBad = false;
+function applyNotice() {
+  const a = $('artist');
+  const on = !!noticeText;
+  a.classList.toggle('notice', on);
+  a.classList.toggle('bad', on && noticeBad);
+  a.textContent = on ? noticeText : (st ? st.artist : DEFAULT_ARTIST);
+  if (plOpen) {
+    const n = $('plName');
+    n.textContent = on ? noticeText : NAME_HINT;
+    n.classList.toggle('on', on);
+    n.classList.toggle('bad', on && noticeBad);
+  }
+}
 function flash(msg, good) {
-  const t = $('status');
   clearTimeout(flashTimer);
-  if (!msg) { t.classList.remove('show'); return; }
-  t.textContent = msg;
-  t.classList.toggle('bad', !good);
-  t.classList.add('show');
-  flashTimer = setTimeout(() => t.classList.remove('show'), 3800);
+  noticeText = msg || '';
+  noticeBad = !good;
+  applyNotice();
+  if (msg) flashTimer = setTimeout(() => { noticeText = ''; applyNotice(); }, 3800);
 }
 
 // ---------- Kolor akcentu z okładki ----------
@@ -160,7 +174,7 @@ function render() {
   const card = $('card');
   if (!st) {
     setTitle('Nic nie gra');
-    $('artist').textContent = 'Włącz coś w Spotify albo wybierz playlistę';
+    applyNotice();
     $('art').removeAttribute('src');
     delete $('art').dataset.src;
     $('bg').style.backgroundImage = '';
@@ -173,7 +187,7 @@ function render() {
     return;
   }
   setTitle(st.title);
-  $('artist').textContent = st.artist;
+  applyNotice();
   $('card').title = st.device ? 'Urządzenie: ' + st.device : '';
   if (st.art && $('art').dataset.src !== st.art) {
     $('art').src = st.art;
@@ -253,6 +267,7 @@ function setPlaylists(open) {
   $('player').classList.toggle('pl-mode', open);   // playlisty zastępują playera, okno bez zmian
   $('plBtn').classList.toggle('on', open);
   $('plBtn').title = open ? 'Wróć do playera' : 'Playlisty';
+  if (open) applyNotice();
   // odśwież listę, gdy się nie wczytała albo jest starsza niż 3 minuty (nowe playlisty pojawiają się same)
   if (open) { $('filter').focus(); if (!PREVIEW && (!plLoaded || Date.now() - plAt > 3 * 60 * 1000)) loadPlaylists(); }
   else { $('filter').value = ''; $('filter').blur(); renderPlaylists(); }
@@ -303,6 +318,8 @@ async function playUri(uri) {
 }
 
 const NAME_HINT = 'Najedź na okładkę, aby zobaczyć nazwę';
+// po zjechaniu z okładki wracamy do powiadomienia (jeśli trwa) albo do podpowiedzi
+function resetPlName() { const n = $('plName'); n.textContent = noticeText || NAME_HINT; n.classList.toggle('on', !!noticeText); n.classList.toggle('bad', !!noticeText && noticeBad); }
 // w układzie minimalistycznym lista to poziomy rząd: kółko myszy przewija w bok
 $('plList').addEventListener('wheel', (e) => {
   if (document.documentElement.dataset.layout !== 'compact') return;
@@ -326,7 +343,7 @@ function renderPlaylists() {
     if (p.liked) el.dataset.liked = '1';
     el.append(img);
     el.onmouseenter = () => { $('plName').textContent = p.name; $('plName').classList.add('on'); };
-    el.onmouseleave = () => { $('plName').textContent = NAME_HINT; $('plName').classList.remove('on'); };
+    el.onmouseleave = resetPlName;
     el.onclick = () => playUri(p.uri);
     box.appendChild(el);
   }
@@ -336,7 +353,7 @@ function renderPlaylists() {
     const ph = Object.assign(document.createElement('div'), { className: 'ph retry', textContent: '↻' });
     el.append(ph);
     el.onmouseenter = () => { $('plName').textContent = `Nie udało się pobrać playlist (${plErr}). Kliknij, aby ponowić`; $('plName').classList.add('on'); };
-    el.onmouseleave = () => { $('plName').textContent = NAME_HINT; $('plName').classList.remove('on'); };
+    el.onmouseleave = resetPlName;
     el.onclick = () => { plAttempt = 0; loadPlaylists(); };
     box.appendChild(el);
   }
