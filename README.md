@@ -25,6 +25,31 @@ Spotify wymaga własnej aplikacji, żeby sterować odtwarzaniem:
 > Do sterowania odtwarzaniem Spotify zwykle wymaga konta **Premium**.
 > Spotify musi być uruchomione na komputerze (albo na innym urządzeniu).
 
+## Udostępnianie znajomemu
+
+Instalator jest samodzielny (zawiera wszystko), więc wystarczy wysłać link do **Releases**
+albo sam plik `.exe` (ok. 115 MB). W instalatorze nie ma żadnych kont ani kluczy, każdy loguje się
+sam. Znajomy ma dwie opcje:
+
+1. **Własna aplikacja Spotify** (najprościej, ok. 5 minut): kroki z sekcji „Pierwsze logowanie”.
+2. **Cudzy Client ID** (np. Twój): właściciel aplikacji musi w dashboardzie, w zakładce
+   **User Management**, dodać e-mail znajomego (tryb deweloperski działa tylko dla osób z listy,
+   do 25). Bez tego logowanie zwróci błąd.
+
+Jeśli repo jest prywatne, znajomy nie pobierze pliku z Releases, dopóki nie dodasz go w
+**Settings → Collaborators** (albo nie ustawisz repo jako publiczne).
+
+## Rozwiązywanie problemów
+
+| Problem | Rozwiązanie |
+| --- | --- |
+| Windows ostrzega przy uruchomieniu | Plik jest niepodpisany. **Więcej informacji → Uruchom mimo to**. |
+| Logowanie: błąd / „INVALID_CLIENT” | Sprawdź Client ID i czy Redirect URI to dokładnie `http://127.0.0.1:8888/callback`. |
+| Logowanie: 403 / „user not registered” | Dodaj e-mail użytkownika w **User Management** aplikacji Spotify. |
+| „Port 8888 zajęty” | Zamknij program używający portu 8888 i spróbuj ponownie. |
+| Pauza/skip nie reagują | Spotify zwykle wymaga **Premium** do sterowania z zewnątrz i musi być uruchomione. |
+| Brak playlisty (np. DJ, Daily Mix) | Wklej link do niej w polu wyszukiwania i naciśnij Enter. |
+
 ## Obsługa
 
 - **☰** – playlisty zamiast playera (to samo okno). Szukaj, klikaj, albo wklej link
