@@ -7,6 +7,7 @@ contextBridge.exposeInMainWorld('sp', {
   login: call('auth:login'),
   logout: call('auth:logout'),
   onLoggedOut: (cb) => ipcRenderer.on('auth:loggedOut', cb),
+  onUpdate: (cb) => ipcRenderer.on('update:status', (_e, msg) => cb(msg)),
   state: call('player:state'),
   toggle: call('player:toggle'),
   next: call('player:next'),

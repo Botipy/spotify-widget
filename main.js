@@ -287,6 +287,30 @@ function createWindow() {
   win.on('moved', () => { const b = win.getBounds(); store.bounds = { x: b.x, y: b.y }; saveStore(); });
 }
 
+// ---------- Autoaktualizacje (GitHub Releases) ----------
+let autoUpdater = null;
+let updateReady = false;
+let manualCheck = false;
+const say = (m) => { if (win && !win.isDestroyed()) win.webContents.send('update:status', m); };
+
+function setupUpdater() {
+  if (!app.isPackaged) return; // tylko w zainstalowanej wersji
+  ({ autoUpdater } = require('electron-updater'));
+  autoUpdater.autoDownload = true;
+  autoUpdater.autoInstallOnAppQuit = true;
+  autoUpdater.on('update-available', (i) => say(`Pobieram aktualizację ${i.version}…`));
+  autoUpdater.on('update-not-available', () => { if (manualCheck) say(`Masz najnowszą wersję (${app.getVersion()})`); manualCheck = false; });
+  autoUpdater.on('update-downloaded', (i) => {
+    updateReady = true;
+    say(`Aktualizacja ${i.version} gotowa. Zainstaluje się po zamknięciu.`);
+    buildTrayMenu();
+  });
+  autoUpdater.on('error', () => { if (manualCheck) say('Nie udało się sprawdzić aktualizacji'); manualCheck = false; });
+  const check = () => autoUpdater.checkForUpdates().catch(() => {});
+  check();
+  setInterval(check, 6 * 60 * 60 * 1000);
+}
+
 function buildTrayMenu() {
   if (!tray) return;
   tray.setContextMenu(Menu.buildFromTemplate([
@@ -294,6 +318,11 @@ function buildTrayMenu() {
     { label: 'Zawsze na wierzchu', type: 'checkbox', checked: store.onTop !== false, click: (m) => setOnTop(m.checked) },
     { label: 'Uruchamiaj z Windowsem', type: 'checkbox', checked: app.getLoginItemSettings().openAtLogin,
       click: (m) => app.setLoginItemSettings({ openAtLogin: m.checked }) },
+    { type: 'separator' },
+    { label: `Wersja ${app.getVersion()}`, enabled: false },
+    updateReady
+      ? { label: 'Zainstaluj aktualizację i zrestartuj', click: () => autoUpdater.quitAndInstall(true, true) }
+      : { label: 'Sprawdź aktualizacje', enabled: !!autoUpdater, click: () => { manualCheck = true; autoUpdater.checkForUpdates().catch(() => say('Nie udało się sprawdzić aktualizacji')); } },
     { type: 'separator' },
     { label: 'Wyloguj ze Spotify', click: () => { tokens = null; delete store.refresh; saveStore(); win.webContents.send('auth:loggedOut'); } },
     { label: 'Zamknij', click: () => app.quit() },
@@ -311,6 +340,7 @@ if (!app.requestSingleInstanceLock()) {
     tray = new Tray(nativeImage.createFromPath(path.join(__dirname, 'assets', 'icon.png')).resize({ width: 16, height: 16 }));
     tray.setToolTip('Spotify Widget');
     tray.on('click', () => (win.isVisible() ? win.hide() : win.show()));
+    setupUpdater();
     buildTrayMenu();
   });
   app.on('window-all-closed', () => app.quit());

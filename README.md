@@ -13,6 +13,14 @@ Kolor akcentu dopasowuje się do okładki aktualnego utworu.
 
 Odinstalowanie: **Ustawienia → Aplikacje → Spotify Widget**.
 
+## Aktualizacje
+
+Zainstalowana wersja sama sprawdza **Releases** przy starcie i co 6 godzin. Gdy jest nowsza,
+pobiera ją w tle i instaluje po zamknięciu aplikacji (albo od razu z menu w zasobniku:
+**Zainstaluj aktualizację i zrestartuj**). Ręcznie: prawy klik na ikonie → **Sprawdź aktualizacje**.
+Autoaktualizacje działają od wersji 1.0.2 (starsze trzeba raz zainstalować ręcznie) i wymagają
+publicznego repo.
+
 ## Pierwsze logowanie (raz)
 
 Spotify wymaga własnej aplikacji, żeby sterować odtwarzaniem:

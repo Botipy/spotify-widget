@@ -1,7 +1,7 @@
 {
   "name": "spotify-widget",
   "productName": "Spotify Widget",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "Minimalistyczna nakładka Spotify na pulpit",
   "main": "main.js",
   "author": "Botipy",
@@ -11,6 +11,13 @@
   },
   "build": {
     "appId": "com.botipy.spotifywidget",
+    "publish": [
+      {
+        "provider": "github",
+        "owner": "Botipy",
+        "repo": "spotify-widget"
+      }
+    ],
     "productName": "Spotify Widget",
     "files": [
       "main.js",
@@ -41,5 +48,8 @@
   "devDependencies": {
     "electron": "^45.3.1",
     "electron-builder": "^26.18.0"
+  },
+  "dependencies": {
+    "electron-updater": "^6.8.11"
   }
 }

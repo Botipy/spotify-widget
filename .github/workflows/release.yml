@@ -22,10 +22,16 @@ jobs:
       - uses: actions/upload-artifact@v4
         with:
           name: Spotify-Widget-Setup
-          path: dist/*.exe
+          path: |
+            dist/*.exe
+            dist/*.blockmap
+            dist/latest.yml
       - name: Publish release
         if: startsWith(github.ref, 'refs/tags/v')
         uses: softprops/action-gh-release@v2
         with:
-          files: dist/*.exe
+          files: |
+            dist/*.exe
+            dist/*.blockmap
+            dist/latest.yml
           generate_release_notes: true

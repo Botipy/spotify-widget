@@ -102,6 +102,7 @@ $('loginBtn').onclick = async () => {
 };
 
 sp.onLoggedOut(() => { clearInterval(pollTimer); show('login'); });
+sp.onUpdate((msg) => flash(msg, true));
 
 // ---------- Player ----------
 function startPlayer() {
