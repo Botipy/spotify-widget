@@ -527,8 +527,8 @@ let settingsWin = null;
 function openSettings() {
   if (settingsWin && !settingsWin.isDestroyed()) { settingsWin.show(); settingsWin.focus(); return; }
   settingsWin = new BrowserWindow({
-    width: 720, height: 740, minWidth: 560, minHeight: 480,
-    title: 'Spotify Widget – Ustawienia', backgroundColor: '#141416', autoHideMenuBar: true,
+    width: 1020, height: 760, minWidth: 820, minHeight: 520,
+    title: 'Spotify Widget – Ustawienia', backgroundColor: '#0a0912', autoHideMenuBar: true,
     icon: path.join(__dirname, 'assets', 'icon.png'),
     webPreferences: { preload: path.join(__dirname, 'preload.js'), contextIsolation: true, nodeIntegration: false },
   });
