@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="pl">
+<html lang="en">
 <head>
   <meta charset="utf-8">
   <meta http-equiv="Content-Security-Policy" content="default-src 'self'; img-src 'self' https: data:; style-src 'self' 'unsafe-inline'">
@@ -36,16 +36,16 @@
     <!-- Logowanie -->
     <section id="login" hidden>
       <div class="top">
-        <span class="grip drag" title="Przytrzymaj i przeciągnij, żeby przesunąć"><svg><use href="#i-grip"/></svg></span>
+        <span class="grip drag" data-i18n-title="gripTip" title="Hold and drag to move"><svg><use href="#i-grip"/></svg></span>
         <span class="brand drag"><span class="dot"></span>Spotify Widget</span>
         <span class="spacer drag"></span>
-        <button class="ic nodrag" id="close1" title="Ukryj"><svg><use href="#i-close"/></svg></button>
+        <button class="ic nodrag" id="close1" data-i18n-title="hide" title="Hide"><svg><use href="#i-close"/></svg></button>
       </div>
-      <p class="hint">Wklej <b>Client ID</b> z <a href="#" id="devlink">developer.spotify.com</a> i dodaj tam Redirect URI:</p>
-      <code id="redirect" title="Kliknij, żeby skopiować"></code>
+      <p class="hint" data-i18n-html="loginHint">Paste the <b>Client ID</b> from <a href="#" id="devlink">developer.spotify.com</a> and add this Redirect URI there:</p>
+      <code id="redirect" data-i18n-title="clickCopy" title="Click to copy"></code>
       <div class="row">
         <input id="clientId" class="nodrag" placeholder="Client ID" spellcheck="false" autocomplete="off">
-        <button id="loginBtn" class="primary nodrag">Zaloguj</button>
+        <button id="loginBtn" class="primary nodrag" data-i18n="signIn">Sign in</button>
       </div>
       <div id="loginErr" class="err"></div>
     </section>
@@ -53,23 +53,23 @@
     <!-- Player -->
     <section id="player" hidden>
       <div class="top">
-        <span class="grip drag" title="Przytrzymaj i przeciągnij, żeby przesunąć"><svg><use href="#i-grip"/></svg></span>
+        <span class="grip drag" data-i18n-title="gripTip" title="Hold and drag to move"><svg><use href="#i-grip"/></svg></span>
         <span class="brand drag"><span class="dot"></span>Spotify</span>
         <span class="eq" id="eq"><i></i><i></i><i></i><i></i></span>
-        <input id="filter" class="nodrag" placeholder="Szukaj lub wklej link…" spellcheck="false" autocomplete="off">
+        <input id="filter" class="nodrag" placeholder="Search or paste a link…" data-i18n-ph="searchPh" spellcheck="false" autocomplete="off">
         <span id="trTitle" class="trtitle" hidden></span>
         <span class="spacer drag"></span>
-        <button class="ic nodrag" id="pomoBtn" title="Pomodoro" hidden><svg><use href="#i-clock"/></svg></button>
-        <button class="ic nodrag" id="setBtn" title="Wygląd i ustawienia"><svg><use href="#i-gear"/></svg></button>
-        <button class="ic nodrag" id="plBtn" title="Playlisty"><svg class="s-list"><use href="#i-list"/></svg><svg class="s-back"><use href="#i-back"/></svg></button>
-        <button class="ic nodrag" id="close2" title="Ukryj do zasobnika"><svg><use href="#i-close"/></svg></button>
+        <button class="ic nodrag" id="pomoBtn" data-i18n-title="pomodoro" title="Pomodoro" hidden><svg><use href="#i-clock"/></svg></button>
+        <button class="ic nodrag" id="setBtn" data-i18n-title="settingsTip" title="Appearance &amp; settings"><svg><use href="#i-gear"/></svg></button>
+        <button class="ic nodrag" id="plBtn" data-i18n-title="playlistsT" title="Playlists"><svg class="s-list"><use href="#i-list"/></svg><svg class="s-back"><use href="#i-back"/></svg></button>
+        <button class="ic nodrag" id="close2" data-i18n-title="hideTray" title="Hide to tray"><svg><use href="#i-close"/></svg></button>
       </div>
 
       <div class="now">
         <div class="art-wrap"><img id="art" class="art" alt=""><div class="art-ph"><svg><use href="#i-note"/></svg></div></div>
         <div class="meta">
-          <div id="title" class="title"><span>Nic nie gra</span></div>
-          <div id="artist" class="artist">Włącz coś albo wybierz playlistę</div>
+          <div id="title" class="title"><span>Nothing playing</span></div>
+          <div id="artist" class="artist">Play something or pick a playlist</div>
         </div>
       </div>
 
@@ -81,38 +81,38 @@
 
       <div class="controls nodrag">
         <div class="side left">
-          <button class="ic" id="shuffle" title="Losowo"><svg><use href="#i-shuffle"/></svg></button>
-          <button class="ic" id="heart" title="Dodaj do polubionych" disabled><svg class="h-off"><use href="#i-heart"/></svg><svg class="h-on"><use href="#i-heart-fill"/></svg></button>
+          <button class="ic" id="shuffle" data-i18n-title="shuffle" title="Shuffle"><svg><use href="#i-shuffle"/></svg></button>
+          <button class="ic" id="heart" data-i18n-title="heartAdd" title="Add to Liked Songs" disabled><svg class="h-off"><use href="#i-heart"/></svg><svg class="h-on"><use href="#i-heart-fill"/></svg></button>
         </div>
         <div class="center">
-          <button class="ic big" id="prev" title="Poprzedni"><svg><use href="#i-prev"/></svg></button>
-          <button class="play" id="toggle" title="Odtwórz / pauza">
+          <button class="ic big" id="prev" data-i18n-title="prev" title="Previous"><svg><use href="#i-prev"/></svg></button>
+          <button class="play" id="toggle" data-i18n-title="playPause" title="Play / pause">
             <svg class="p-play"><use href="#i-play"/></svg>
             <svg class="p-pause"><use href="#i-pause"/></svg>
           </button>
-          <button class="ic big" id="next" title="Następny"><svg><use href="#i-next"/></svg></button>
+          <button class="ic big" id="next" data-i18n-title="next" title="Next"><svg><use href="#i-next"/></svg></button>
         </div>
-        <div class="side right"><div class="volbox"><svg><use href="#i-vol"/></svg><input id="vol" type="range" min="0" max="100" title="Głośność"></div></div>
+        <div class="side right"><div class="volbox"><svg><use href="#i-vol"/></svg><input id="vol" type="range" min="0" max="100" data-i18n-title="volume" title="Volume"></div></div>
       </div>
 
-      <div id="plPanel"><div id="plList"></div><div id="plName">Najedź na okładkę, aby zobaczyć nazwę</div></div>
+      <div id="plPanel"><div id="plList"></div><div id="plName" data-i18n="hoverCover">Hover over a cover to see its name</div></div>
       <div id="trPanel"><div id="trList"></div></div>
     </section>
 
     <!-- Pomodoro -->
     <section id="pomo" hidden>
       <div class="top">
-        <span class="grip drag" title="Przytrzymaj i przeciągnij, żeby przesunąć"><svg><use href="#i-grip"/></svg></span>
+        <span class="grip drag" data-i18n-title="gripTip" title="Hold and drag to move"><svg><use href="#i-grip"/></svg></span>
         <span class="brand drag"><span class="dot"></span>Pomodoro</span>
         <span class="spacer drag"></span>
-        <button class="ic nodrag" id="pomoBack" title="Wróć do muzyki"><svg><use href="#i-note"/></svg></button>
-        <button class="ic nodrag" id="setBtn2" title="Wygląd i ustawienia"><svg><use href="#i-gear"/></svg></button>
-        <button class="ic nodrag" id="close3" title="Ukryj do zasobnika"><svg><use href="#i-close"/></svg></button>
+        <button class="ic nodrag" id="pomoBack" data-i18n-title="backToMusic" title="Back to music"><svg><use href="#i-note"/></svg></button>
+        <button class="ic nodrag" id="setBtn2" data-i18n-title="settingsTip" title="Appearance &amp; settings"><svg><use href="#i-gear"/></svg></button>
+        <button class="ic nodrag" id="close3" data-i18n-title="hideTray" title="Hide to tray"><svg><use href="#i-close"/></svg></button>
       </div>
       <div class="pomo-modes nodrag">
         <button class="pm" data-mode="focus">Focus</button>
-        <button class="pm" data-mode="short"><span class="long">Krótka przerwa</span><span class="shortl">Krótka</span></button>
-        <button class="pm" data-mode="long"><span class="long">Długa przerwa</span><span class="shortl">Długa</span></button>
+        <button class="pm" data-mode="short"><span class="long" data-i18n="modeShortLong">Short break</span><span class="shortl" data-i18n="modeShort">Short</span></button>
+        <button class="pm" data-mode="long"><span class="long" data-i18n="modeLongLong">Long break</span><span class="shortl" data-i18n="modeLong">Long</span></button>
       </div>
       <div class="pomo-body">
         <div class="ring">
@@ -120,17 +120,18 @@
           <span id="pomoTime">25:00</span>
         </div>
         <div class="pomo-side">
-          <div class="pomo-info"><div class="pdots" id="pomoDots"></div><div class="plabel" id="pomoLabel">Sesja 1/4</div></div>
+          <div class="pomo-info"><div class="pdots" id="pomoDots"></div><div class="plabel" id="pomoLabel">Session 1/4</div></div>
           <div class="pomo-ctl nodrag">
-            <button class="ic big" id="pReset" title="Zacznij blok od nowa"><svg><use href="#i-reset"/></svg></button>
-            <button class="play" id="pToggle" title="Start / pauza"><svg class="pp-play"><use href="#i-play"/></svg><svg class="pp-pause"><use href="#i-pause"/></svg></button>
-            <button class="ic big" id="pSkip" title="Pomiń do następnego bloku"><svg><use href="#i-next"/></svg></button>
+            <button class="ic big" id="pReset" data-i18n-title="restartBlock" title="Restart this block"><svg><use href="#i-reset"/></svg></button>
+            <button class="play" id="pToggle" data-i18n-title="startPause" title="Start / pause"><svg class="pp-play"><use href="#i-play"/></svg><svg class="pp-pause"><use href="#i-pause"/></svg></button>
+            <button class="ic big" id="pSkip" data-i18n-title="skipBlock" title="Skip to the next block"><svg><use href="#i-next"/></svg></button>
           </div>
         </div>
       </div>
     </section>
     <div id="status" class="toast"></div>
   </div>
+  <script src="i18n.js"></script>
   <script src="sound.js"></script>
   <script src="renderer.js"></script>
 </body>

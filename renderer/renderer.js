@@ -1,4 +1,5 @@
 const $ = (id) => document.getElementById(id);
+const L = I18N.t;
 
 // ---------- Tryb podglądu (iframe w oknie ustawień, bez API) ----------
 const qs = new URLSearchParams(location.search);
@@ -18,8 +19,17 @@ if (!window.sp) {
 
 // ---------- Wygląd: preset (data-theme) + układ (data-layout) ----------
 const COVER_ACCENT = new Set(['liquid', 'glass']); // te presety biorą kolor akcentu z okładki
+function relocalize() { // po zmianie języka: odśwież teksty dynamiczne
+  try {
+    $('plBtn').title = plOpen ? L('backToPlayer') : L('playlistsT');
+    render(); renderPlaylists(); paintHeart(); if (pomoSt) applyPomoState(pomoSt);
+    if (trOpen) renderTracks();
+    resetPlName();
+  } catch {}
+}
 function applyLook(s) {
   const root = document.documentElement;
+  if (s.lang && s.lang !== I18N.getLang()) { I18N.setLang(s.lang); I18N.apply(); relocalize(); }
   root.dataset.theme = s.theme;
   root.dataset.layout = s.layout;
   if (!COVER_ACCENT.has(s.theme)) {
@@ -52,17 +62,16 @@ function show(view) {
 
 // Powiadomienia (polubienia, aktualizacje, błędy) nie zasłaniają przycisków: na kilka sekund podmieniają linię
 // wykonawcy w playerze, a w widoku playlist linię z nazwą pod okładkami.
-const DEFAULT_ARTIST = 'Włącz coś w Spotify albo wybierz playlistę';
 let flashTimer = null, noticeText = '', noticeBad = false;
 function applyNotice() {
   const a = $('artist');
   const on = !!noticeText;
   a.classList.toggle('notice', on);
   a.classList.toggle('bad', on && noticeBad);
-  a.textContent = on ? noticeText : (st ? st.artist : DEFAULT_ARTIST);
+  a.textContent = on ? noticeText : (st ? st.artist : L('idleArtist'));
   if (plOpen) {
     const n = $('plName');
-    n.textContent = on ? noticeText : NAME_HINT;
+    n.textContent = on ? noticeText : nameHint();
     n.classList.toggle('on', on);
     n.classList.toggle('bad', on && noticeBad);
   }
@@ -133,8 +142,8 @@ async function init() {
   if (a.loggedIn) startPlayer(); else show('login');
 }
 
-$('redirect').onclick = () => { navigator.clipboard.writeText($('redirect').textContent); $('redirect').textContent = 'Skopiowano ✔'; setTimeout(async () => { $('redirect').textContent = (await sp.authStatus()).redirectUri; }, 1200); };
-$('devlink').onclick = (e) => { e.preventDefault(); sp.openUrl('https://developer.spotify.com/dashboard'); };
+$('redirect').onclick = () => { navigator.clipboard.writeText($('redirect').textContent); $('redirect').textContent = L('copied'); setTimeout(async () => { $('redirect').textContent = (await sp.authStatus()).redirectUri; }, 1200); };
+$('login').addEventListener('click', (e) => { if (e.target.id === 'devlink') { e.preventDefault(); sp.openUrl('https://developer.spotify.com/dashboard'); } });
 $('close1').onclick = () => sp.hide();
 $('close2').onclick = () => sp.hide();
 $('setBtn').onclick = () => sp.openSettings();
@@ -142,13 +151,13 @@ sp.onSettings(applyLook);
 
 $('loginBtn').onclick = async () => {
   const id = $('clientId').value.trim();
-  if (!id) { $('loginErr').textContent = 'Podaj Client ID'; return; }
-  $('loginErr').textContent = 'Czekam na logowanie w przeglądarce…';
+  if (!id) { $('loginErr').textContent = L('enterClientId'); return; }
+  $('loginErr').textContent = L('waitingBrowser');
   $('loginBtn').disabled = true;
   const r = await sp.login(id);
   $('loginBtn').disabled = false;
   if (r.ok) { $('loginErr').textContent = ''; startPlayer(); }
-  else $('loginErr').textContent = r.error || 'Nie udało się zalogować';
+  else $('loginErr').textContent = r.error || L('signInFailed');
 };
 
 sp.onLoggedOut(() => { clearInterval(pollTimer); show('login'); });
@@ -175,7 +184,7 @@ async function poll() {
 function render() {
   const card = $('card');
   if (!st) {
-    setTitle('Nic nie gra');
+    setTitle(L('nothingPlaying'));
     applyNotice();
     $('art').removeAttribute('src');
     delete $('art').dataset.src;
@@ -190,7 +199,7 @@ function render() {
   }
   setTitle(st.title);
   applyNotice();
-  $('card').title = st.device ? 'Urządzenie: ' + st.device : '';
+  $('card').title = st.device ? L('deviceLbl', { d: st.device }) : '';
   if (st.art && $('art').dataset.src !== st.art) {
     $('art').src = st.art;
     $('art').dataset.src = st.art;
@@ -269,7 +278,7 @@ function setPlaylists(open) {
   if (!open && trOpen) hideTracks();
   $('player').classList.toggle('pl-mode', open);   // playlisty zastępują playera, okno bez zmian
   $('plBtn').classList.toggle('on', open);
-  $('plBtn').title = open ? 'Wróć do playera' : 'Playlisty';
+  $('plBtn').title = open ? L('backToPlayer') : L('playlistsT');
   if (open) applyNotice();
   // odśwież listę, gdy się nie wczytała albo jest starsza niż 3 minuty (nowe playlisty pojawiają się same)
   if (open) { $('filter').focus(); if (!PREVIEW && (!plLoaded || Date.now() - plAt > 3 * 60 * 1000)) loadPlaylists(); }
@@ -289,19 +298,19 @@ async function loadPlaylists() {
   if (plLoading) return;
   plLoading = true;
   let r;
-  try { r = await sp.playlists(); } catch { r = { ok: false, items: [], error: 'Brak połączenia' }; }
+  try { r = await sp.playlists(); } catch { r = { ok: false, items: [], error: L('noConn') }; }
   plLoading = false;
   // DJ (AI) nie jest zwracany przez API listy playlist, więc przypinamy go ręcznie
   playlists = [LIKED, DJ, ...(r.items || []).filter((p) => p.uri !== DJ.uri)];
   plLoaded = !!r.ok;
-  plErr = r.ok ? '' : (r.error || 'nieznany błąd');
+  plErr = r.ok ? '' : (r.error || L('unknownErr'));
   clearTimeout(plRetry);
   if (r.ok) { plAt = Date.now(); plAttempt = 0; }
   else { const delays = [3000, 8000, 20000, 60000]; plRetry = setTimeout(loadPlaylists, delays[Math.min(plAttempt++, delays.length - 1)]); }
   renderPlaylists();
 }
 
-const LIKED = { id: 'liked', name: 'Polubione utwory', uri: 'spotify:collection:tracks', liked: true };
+const LIKED = { id: 'liked', get name() { return L('likedSongs'); }, uri: 'spotify:collection:tracks', liked: true };
 const DJ = { id: 'dj', name: 'DJ (Spotify AI)', uri: 'spotify:playlist:37i9dQZF1EYkqdzj48dyYq', dj: true };
 
 // Wklejony link/URI Spotify -> context URI (playlist/album/artist/show)
@@ -316,13 +325,13 @@ async function playUri(uri) {
   setPlaylists(false);
   const r = await sp.playPlaylist(uri);
   if (!r.ok) flash(r.error);
-  else if (r.opened) flash('Otwarto w aplikacji Spotify', true);
+  else if (r.opened) flash(L('openedInSpotify'), true);
   setTimeout(poll, 500);
 }
 
-const NAME_HINT = 'Klik: odtwórz  ·  ikona ≡ lub prawy klik: utwory';
+const nameHint = () => L('nameHint');
 // po zjechaniu z okładki wracamy do powiadomienia (jeśli trwa) albo do podpowiedzi
-function resetPlName() { const n = $('plName'); n.textContent = noticeText || NAME_HINT; n.classList.toggle('on', !!noticeText); n.classList.toggle('bad', !!noticeText && noticeBad); }
+function resetPlName() { const n = $('plName'); n.textContent = noticeText || nameHint(); n.classList.toggle('on', !!noticeText); n.classList.toggle('bad', !!noticeText && noticeBad); }
 // w układzie minimalistycznym lista to poziomy rząd: kółko myszy przewija w bok
 $('plList').addEventListener('wheel', (e) => {
   if (document.documentElement.dataset.layout !== 'compact') return;
@@ -335,7 +344,7 @@ function renderPlaylists() {
   const list = playlists.filter((p) => p.name.toLowerCase().includes(q));
   const box = $('plList');
   box.innerHTML = '';
-  if (!list.length) { box.innerHTML = '<div class="empty">Brak playlist</div>'; return; }
+  if (!list.length) { box.innerHTML = '<div class="empty">' + L('noPlaylists') + '</div>'; return; }
   for (const p of list) {
     const el = document.createElement('div');
     el.className = 'pl';
@@ -350,7 +359,7 @@ function renderPlaylists() {
     el.onclick = () => playUri(p.uri);
     el.oncontextmenu = (e) => { e.preventDefault(); showTracks(p); };
     const pk = document.createElement('button');
-    pk.className = 'peek'; pk.title = 'Pokaż utwory';
+    pk.className = 'peek'; pk.title = L('showTracks');
     pk.innerHTML = '<svg><use href="#i-list"/></svg>';
     pk.onclick = (e) => { e.stopPropagation(); showTracks(p); };
     el.append(pk);
@@ -361,7 +370,7 @@ function renderPlaylists() {
     el.className = 'pl';
     const ph = Object.assign(document.createElement('div'), { className: 'ph retry', textContent: '↻' });
     el.append(ph);
-    el.onmouseenter = () => { $('plName').textContent = `Nie udało się pobrać playlist (${plErr}). Kliknij, aby ponowić`; $('plName').classList.add('on'); };
+    el.onmouseenter = () => { $('plName').textContent = L('plFail', { e: plErr }); $('plName').classList.add('on'); };
     el.onmouseleave = resetPlName;
     el.onclick = () => { plAttempt = 0; loadPlaylists(); };
     box.appendChild(el);
@@ -400,11 +409,11 @@ async function loadTracks() {
   trLoading = true; renderTracks();
   const pl = trPl;
   let r;
-  try { r = await sp.playlistTracks(pl.uri, trOffset); } catch { r = { ok: false, error: 'Brak połączenia' }; }
+  try { r = await sp.playlistTracks(pl.uri, trOffset); } catch { r = { ok: false, error: L('noConn') }; }
   trLoading = false;
   if (trPl !== pl || !trOpen) return; // użytkownik zdążył wyjść
   if (r.ok) { trItems = trItems.concat(r.items); trOffset += 50; trMore = r.more; trErr = ''; }
-  else trErr = r.needScope ? 'Brak uprawnień do playlist. Wyloguj i zaloguj ponownie.' : (r.error || 'Nie udało się pobrać utworów');
+  else trErr = r.needScope ? L('needPlScope') : (r.error || L('tracksFail'));
   renderTracks();
 }
 function renderTracks() {
@@ -427,9 +436,9 @@ function renderTracks() {
     box.appendChild(el);
   });
   const note = (msg) => box.appendChild(Object.assign(document.createElement('div'), { className: 'empty', textContent: msg }));
-  if (trLoading) note('Ładowanie…');
+  if (trLoading) note(L('loading'));
   else if (trErr) note(trErr);
-  else if (!trItems.length) note('Brak utworów');
+  else if (!trItems.length) note(L('noTracks'));
   box.scrollTop = keep;
 }
 $('trList').addEventListener('scroll', () => {
@@ -445,7 +454,7 @@ async function playTrack(i) {
   setPlaylists(false); // wracamy do playera
   const r = await sp.playPlaylist(pl.uri, opts);
   if (!r.ok) flash(r.error);
-  else if (r.opened) flash('Otwarto w aplikacji Spotify', true);
+  else if (r.opened) flash(L('openedInSpotify'), true);
   setTimeout(poll, 500);
 }
 // ---------- Serduszko: dodaj/usuń bieżący utwór z polubionych ----------
@@ -458,7 +467,7 @@ function paintHeart() {
   const saved = ok && savedCache.get(st.uri) === true;
   b.disabled = !ok;
   b.classList.toggle('on', saved);
-  b.title = !ok ? 'Polubienia działają tylko dla utworów' : saved ? 'Usuń z polubionych' : 'Dodaj do polubionych';
+  b.title = !ok ? L('heartOnlyTracks') : saved ? L('heartRemove') : L('heartAdd');
 }
 async function ensureSavedKnown() {
   if (!st || st.kind !== 'track' || !st.uri || savedCache.has(st.uri) || heartChecking === st.uri) return;
@@ -477,14 +486,14 @@ $('heart').onclick = async () => {
   savedCache.set(uri, want); paintHeart(); // od razu pokazujemy zmianę, w razie błędu cofniemy
   let r = await sp.libSet(uri, want);
   if (r.needScope) { // stary token nie ma uprawnień do biblioteki: jednorazowa ponowna zgoda
-    flash('Spotify prosi o dodatkową zgodę (polubione). Otwieram przeglądarkę…', true);
+    flash(L('consent'), true);
     const a = await sp.relogin();
-    r = a.ok ? await sp.libSet(uri, want) : { ok: false, error: a.error || 'Nie udało się nadać zgody' };
+    r = a.ok ? await sp.libSet(uri, want) : { ok: false, error: a.error || L('consentFail') };
   }
   heartBusy = false;
-  if (!r.ok) { savedCache.set(uri, !want); paintHeart(); flash(r.error || 'Nie udało się zmienić polubienia'); return; }
+  if (!r.ok) { savedCache.set(uri, !want); paintHeart(); flash(r.error || L('likeFail')); return; }
   paintHeart();
-  flash(want ? 'Dodano do polubionych' : 'Usunięto z polubionych', true);
+  flash(want ? L('likedAdded') : L('likedRemoved'), true);
 };
 
 // ---------- Pomodoro: widok timera ----------
@@ -523,7 +532,7 @@ function applyPomoState(st) {
   }
   const done = st.mode === 'focus' ? st.session - 1 : st.session; // w przerwie bieżąca sesja jest już zrobiona
   [...box.children].forEach((d, i) => { d.className = 'pdot' + (i < done ? ' done' : '') + (st.mode === 'focus' && i === st.session - 1 ? ' cur' : ''); });
-  $('pomoLabel').textContent = st.mode === 'long' ? 'Długa przerwa' : (st.mode === 'short' ? 'Przerwa · ' : 'Sesja ') + st.session + '/' + st.sessions;
+  $('pomoLabel').textContent = st.mode === 'long' ? L('pomoLong') : (st.mode === 'short' ? L('pomoShort') : L('pomoSession')) + st.session + '/' + st.sessions;
   paintPomoView();
 }
 $('pomoBtn').onclick = () => showPomo(true);
@@ -540,6 +549,7 @@ setInterval(paintPomoView, 250);
 sp.pomoGet().then(applyPomoState).catch(() => {});
 // Podgląd presetu w oknie ustawień: sztuczny stan odtwarzania, bez API
 function startPreview() {
+  if (qs.get('lang')) { I18N.setLang(qs.get('lang')); I18N.apply(); }
   applyLook({ theme: qs.get('theme') || 'liquid', layout: qs.get('layout') || 'standard' });
   document.body.classList.add('preview');
   show('player');
@@ -555,7 +565,7 @@ function startPreview() {
       const cv = document.createElement('canvas'); cv.width = cv.height = 64;
       const x = cv.getContext('2d'); const g = x.createLinearGradient(0, 0, 64, 64);
       g.addColorStop(0, c[0]); g.addColorStop(1, c[1]); x.fillStyle = g; x.fillRect(0, 0, 64, 64);
-      return { id: 'p' + i, name: 'Playlista ' + (i + 1), uri: 'x' + i, image: cv.toDataURL() };
+      return { id: 'p' + i, name: L('exPlaylist', { n: i + 1 }), uri: 'x' + i, image: cv.toDataURL() };
     });
     playlists.unshift(LIKED);
     plLoaded = true;
@@ -570,10 +580,10 @@ function startPreview() {
   x.fillStyle = g; x.fillRect(0, 0, 200, 200);
   x.fillStyle = 'rgba(255,255,255,.28)'; x.beginPath(); x.arc(100, 100, 56, 0, 7); x.fill();
   x.fillStyle = 'rgba(0,0,0,.25)'; x.beginPath(); x.arc(100, 100, 18, 0, 7); x.fill();
-  st = { playing: true, title: qs.get('title') || 'Przykładowy utwór', artist: qs.get('artist') || 'Wykonawca, Gość', art: c.toDataURL(), duration: 157000, progress: 41000, shuffle: true, volume: 60, device: null, context: null, kind: 'track', uri: 'spotify:track:preview' };
+  st = { playing: true, title: qs.get('title') || L('exTrack'), artist: qs.get('artist') || L('exArtist'), art: c.toDataURL(), duration: Number(qs.get('dur')) || 157000, progress: Number(qs.get('pos')) || 41000, shuffle: true, volume: 60, device: null, context: null, kind: 'track', uri: 'spotify:track:preview' };
   savedCache.set('spotify:track:preview', true); // w podglądzie serce jest wypełnione
   stAt = Date.now();
-  setInterval(() => { stAt = Date.now(); }, 150); // zamrożony postęp
+  if (qs.get('anim') !== '1') setInterval(() => { stAt = Date.now(); }, 150); // zamrożony postęp (anim=1: postęp biegnie, do GIF-ów)
   render();
 }
 

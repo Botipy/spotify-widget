@@ -22,7 +22,9 @@ const SCOPES = [
 // Dwa układy okna: standardowy (większy) i minimalistyczny (niski, poziomy pasek)
 const SIZES = { standard: { w: 300, h: 168 }, compact: { w: 340, h: 112 } };
 const THEMES = ['liquid', 'retro', 'terminal', 'gameboy', 'neon', 'vaporwave', 'win98', 'winamp', 'glass', 'y2k', 'sakura', 'higanbana'];
-const getSettings = () => ({ theme: 'liquid', layout: 'standard', ...((typeof store !== 'undefined' && store.settings) || {}) });
+const I18N = require('./renderer/i18n.js');
+const L = I18N.t;
+const getSettings = () => ({ theme: 'liquid', layout: 'standard', lang: 'en', ...((typeof store !== 'undefined' && store.settings) || {}) });
 const curSize = () => SIZES[getSettings().layout] || SIZES.standard;
 
 let win, tray;
@@ -63,7 +65,7 @@ async function tokenRequest(params) {
   });
   const data = await res.json().catch(() => ({}));
   if (!res.ok) {
-    const err = new Error(data.error_description || data.error || 'Błąd tokena');
+    const err = new Error(data.error_description || data.error || L('tokenError'));
     err.permanent = res.status === 400 || res.status === 401; // np. invalid_grant: token faktycznie nieważny
     throw err;
   }
@@ -103,20 +105,20 @@ function login(clientId) {
     const state = crypto.randomBytes(8).toString('hex');
 
     if (loginServer) { try { loginServer.close(); } catch {} }
-    const timeout = setTimeout(() => { try { server.close(); } catch {} reject(new Error('Upłynął czas logowania')); }, 180000);
+    const timeout = setTimeout(() => { try { server.close(); } catch {} reject(new Error(L('loginTimeout'))); }, 180000);
 
     const server = http.createServer(async (req, res) => {
       const url = new URL(req.url, `http://127.0.0.1:${REDIRECT_PORT}`);
       if (url.pathname !== '/callback') { res.writeHead(404); return res.end(); }
       const done = (msg) => {
         res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
-        res.end(`<body style="font-family:sans-serif;background:#121212;color:#fff;text-align:center;padding-top:80px"><h2>${msg}</h2><p>Możesz zamknąć tę kartę.</p></body>`);
+        res.end(`<body style="font-family:sans-serif;background:#121212;color:#fff;text-align:center;padding-top:80px"><h2>${msg}</h2><p>${L('loginClose')}</p></body>`);
         clearTimeout(timeout);
         server.close();
       };
       if (url.searchParams.get('state') !== state || url.searchParams.get('error') || !url.searchParams.get('code')) {
-        done('Logowanie nie powiodło się');
-        return reject(new Error(url.searchParams.get('error') || 'Logowanie nie powiodło się'));
+        done(L('loginFailed'));
+        return reject(new Error(url.searchParams.get('error') || L('loginFailed')));
       }
       try {
         await tokenRequest({
@@ -125,15 +127,15 @@ function login(clientId) {
           redirect_uri: REDIRECT_URI,
           code_verifier: verifier,
         });
-        done('Zalogowano w Spotify Widget ✔');
+        done(L('loginOk'));
         resolve(true);
       } catch (e) {
-        done('Błąd logowania');
+        done(L('loginError'));
         reject(e);
       }
     });
     loginServer = server;
-    server.on('error', (e) => { clearTimeout(timeout); reject(new Error('Port 8888 zajęty: ' + e.message)); });
+    server.on('error', (e) => { clearTimeout(timeout); reject(new Error(L('portBusy') + e.message)); });
     server.listen(REDIRECT_PORT, '127.0.0.1', () => {
       const q = new URLSearchParams({
         client_id: store.clientId,
@@ -174,9 +176,9 @@ async function api(method, endpoint, body, retry = true) {
 const errMsg = (r) => {
   const raw = r.data && r.data.error && r.data.error.message;
   // konto spoza listy testerów aplikacji w trybie deweloperskim Spotify
-  if (r.status === 403 && raw && /dashboard|not registered/i.test(raw)) return 'Twojego konta nie ma na liście testerów aplikacji. Poproś autora o dodanie Twojego e-maila w panelu Spotify.';
-  if (r.status === 429) return 'Spotify chwilowo ogranicza zapytania. Spróbuj za chwilę.';
-  return raw || (r.status === 0 ? 'Brak połączenia z internetem' : `Błąd ${r.status}`);
+  if (r.status === 403 && raw && /dashboard|not registered/i.test(raw)) return L('notTester');
+  if (r.status === 429) return L('rateLimit');
+  return raw || (r.status === 0 ? L('noNet') : L('errN', { n: r.status }));
 };
 
 function simplifyState(d) {
@@ -216,7 +218,7 @@ const needsScope = (r) => r.status === 403 && /scope/i.test(errMsg(r));
 
 ipcMain.handle('library:contains', async (_e, uri) => {
   const id = trackId(uri);
-  if (!id) return { ok: false, error: 'To nie jest utwór' };
+  if (!id) return { ok: false, error: L('notTrack') };
   let r = await api('GET', `/me/library/contains?uris=${encodeURIComponent(uri)}`);
   if (r.status === 404 || r.status === 405) r = await api('GET', `/me/tracks/contains?ids=${id}`);
   if (needsScope(r)) return { ok: false, needScope: true };
@@ -226,7 +228,7 @@ ipcMain.handle('library:contains', async (_e, uri) => {
 
 ipcMain.handle('library:set', async (_e, uri, save) => {
   const id = trackId(uri);
-  if (!id) return { ok: false, error: 'To nie jest utwór' };
+  if (!id) return { ok: false, error: L('notTrack') };
   const method = save ? 'PUT' : 'DELETE';
   let r = await api(method, `/me/library?uris=${encodeURIComponent(uri)}`);
   if (r.status === 404 || r.status === 405) r = await api(method, `/me/tracks?ids=${id}`);
@@ -288,7 +290,7 @@ ipcMain.handle('playlists:play', async (_e, openUri, opts = {}) => {
     // brak aktywnego urządzenia: przełącz na pierwsze dostępne (np. Spotify na PC)
     const d = await api('GET', '/me/player/devices');
     const dev = d.data && d.data.devices && d.data.devices[0];
-    if (!dev) return { ok: false, error: 'Brak urządzenia. Uruchom Spotify na komputerze.' };
+    if (!dev) return { ok: false, error: L('noDevice') };
     r = await api('PUT', `/me/player/play?device_id=${dev.id}`, body);
   }
   if (r.status >= 300 && opts.offsetUri && /^spotify:track:[A-Za-z0-9]+$/.test(opts.offsetUri)) {
@@ -315,13 +317,13 @@ ipcMain.handle('playlists:tracks', async (_e, uri, offset = 0) => {
     }
   } else {
     const id = (String(uri).match(/^spotify:playlist:([A-Za-z0-9]+)$/) || [])[1];
-    if (!id) return { ok: false, error: 'To nie jest playlista' };
+    if (!id) return { ok: false, error: L('notPlaylist') };
     r = await api('GET', `/playlists/${id}/items?limit=${limit}&offset=${offset}&additional_types=track`);
     if (r.status === 404 || r.status === 405) r = await api('GET', `/playlists/${id}/tracks?limit=${limit}&offset=${offset}`);
   }
   if (r.status === 403 || r.status === 404) {
     if (needsScope(r)) return { ok: false, needScope: true };
-    return { ok: false, restricted: true, error: 'Spotify nie udostępnia utworów tej playlisty (tylko własne lub współdzielone). Możesz ją odtworzyć w całości.' };
+    return { ok: false, restricted: true, error: L('restricted') };
   }
   if (r.status !== 200 || !r.data) return { ok: false, error: errMsg(r) };
   const items = (r.data.items || [])
@@ -483,9 +485,11 @@ ipcMain.handle('settings:set', (_e, patch) => {
   const next = { ...cur };
   if (patch && THEMES.includes(patch.theme)) next.theme = patch.theme;
   if (patch && SIZES[patch.layout]) next.layout = patch.layout;
+  if (patch && I18N.langs.includes(patch.lang)) next.lang = patch.lang;
   store.settings = next;
   saveStore();
   if (next.layout !== cur.layout) applyLayoutSize();
+  if (next.lang !== cur.lang) { I18N.setLang(next.lang); buildTrayMenu(); if (settingsWin && !settingsWin.isDestroyed()) settingsWin.setTitle(L('settingsTitle')); }
   for (const w of BrowserWindow.getAllWindows()) if (!w.isDestroyed()) w.webContents.send('settings:changed', next);
   return next;
 });
@@ -511,9 +515,9 @@ ipcMain.handle('app:set', (_e, key, value) => {
   return true;
 });
 ipcMain.handle('app:checkUpdates', () => {
-  if (!autoUpdater) return { ok: false, error: 'Aktualizacje działają tylko w zainstalowanej wersji.' };
+  if (!autoUpdater) return { ok: false, error: L('updOnlyInstalled') };
   manualCheck = true;
-  autoUpdater.checkForUpdates().catch(() => say('Nie udało się sprawdzić aktualizacji'));
+  autoUpdater.checkForUpdates().catch(() => say(L('updCheckFail')));
   return { ok: true };
 });
 ipcMain.handle('app:installUpdate', () => { if (autoUpdater && updateReady) autoUpdater.quitAndInstall(true, true); return !!(autoUpdater && updateReady); });
@@ -528,7 +532,7 @@ function openSettings() {
   if (settingsWin && !settingsWin.isDestroyed()) { settingsWin.show(); settingsWin.focus(); return; }
   settingsWin = new BrowserWindow({
     width: 1020, height: 760, minWidth: 820, minHeight: 520,
-    title: 'Spotify Widget – Ustawienia', backgroundColor: '#0a0912', autoHideMenuBar: true,
+    title: L('settingsTitle'), backgroundColor: '#0a0912', autoHideMenuBar: true,
     icon: path.join(__dirname, 'assets', 'icon.png'),
     webPreferences: { preload: path.join(__dirname, 'preload.js'), contextIsolation: true, nodeIntegration: false },
   });
@@ -593,14 +597,14 @@ function setupUpdater() {
   let startupTries = 0;
   setTimeout(() => { startupPhase = false; }, 10 * 60 * 1000);
 
-  autoUpdater.on('update-available', (i) => say(`Pobieram aktualizację ${i.version}…`));
+  autoUpdater.on('update-available', (i) => say(L('updDownloading', { v: i.version })));
   autoUpdater.on('update-not-available', () => {
     startupPhase = false;
     // sprzątanie: pobrany wcześniej instalator (ok. 230 MB w folderze cache) nie jest już potrzebny
     if (process.env.LOCALAPPDATA) {
       fs.rm(path.join(process.env.LOCALAPPDATA, 'spotify-widget-updater'), { recursive: true, force: true }, () => {});
     }
-    if (manualCheck) say(`Masz najnowszą wersję (${app.getVersion()})`);
+    if (manualCheck) say(L('updLatest', { v: app.getVersion() }));
     manualCheck = false;
   });
   autoUpdater.on('update-downloaded', (i) => {
@@ -613,13 +617,13 @@ function setupUpdater() {
       startupPhase = false;
       store.autoInstall = { version: i.version, at: Date.now() };
       saveStore();
-      say(`Aktualizacja ${i.version}: instaluję i restartuję…`);
+      say(L('updInstalling', { v: i.version }));
       setTimeout(() => autoUpdater.quitAndInstall(true, true), 2500); // chwila, żeby komunikat był widoczny
     } else {
-      say(`Aktualizacja ${i.version} gotowa. Zainstaluje się po zamknięciu.`);
+      say(L('updReady', { v: i.version }));
     }
   });
-  autoUpdater.on('error', () => { if (manualCheck) say('Nie udało się sprawdzić aktualizacji'); manualCheck = false; });
+  autoUpdater.on('error', () => { if (manualCheck) say(L('updCheckFail')); manualCheck = false; });
 
   const check = () => autoUpdater.checkForUpdates().catch(() => {});
   // po starcie systemu sieć bywa jeszcze niegotowa: ponawiamy sprawdzenie co 30 s (do 8 prób)
@@ -633,21 +637,21 @@ function setupUpdater() {
 function buildTrayMenu() {
   if (!tray) return;
   tray.setContextMenu(Menu.buildFromTemplate([
-    { label: 'Pokaż / ukryj panel', click: () => (win.isVisible() ? win.hide() : win.show()) },
-    { label: 'Wygląd i ustawienia…', click: () => openSettings() },
-    { label: 'Zawsze na wierzchu', type: 'checkbox', checked: store.onTop !== false, click: (m) => setOnTop(m.checked) },
-    { label: 'Uruchamiaj z Windowsem', type: 'checkbox', checked: app.getLoginItemSettings().openAtLogin,
+    { label: L('trayToggle'), click: () => (win.isVisible() ? win.hide() : win.show()) },
+    { label: L('traySettings'), click: () => openSettings() },
+    { label: L('trayOnTop'), type: 'checkbox', checked: store.onTop !== false, click: (m) => setOnTop(m.checked) },
+    { label: L('trayAutostart'), type: 'checkbox', checked: app.getLoginItemSettings().openAtLogin,
       click: (m) => app.setLoginItemSettings({ openAtLogin: m.checked }) },
     { type: 'separator' },
-    { label: `Wersja ${app.getVersion()}`, enabled: false },
-    { label: 'Aktualizuj automatycznie przy starcie', type: 'checkbox', checked: store.autoUpdateOnStart !== false,
+    { label: L('trayVersion', { v: app.getVersion() }), enabled: false },
+    { label: L('trayAutoUpd'), type: 'checkbox', checked: store.autoUpdateOnStart !== false,
       click: (m) => { store.autoUpdateOnStart = m.checked; saveStore(); } },
     updateReady
-      ? { label: 'Zainstaluj aktualizację i zrestartuj', click: () => autoUpdater.quitAndInstall(true, true) }
-      : { label: 'Sprawdź aktualizacje', enabled: !!autoUpdater, click: () => { manualCheck = true; autoUpdater.checkForUpdates().catch(() => say('Nie udało się sprawdzić aktualizacji')); } },
+      ? { label: L('trayInstall'), click: () => autoUpdater.quitAndInstall(true, true) }
+      : { label: L('trayCheck'), enabled: !!autoUpdater, click: () => { manualCheck = true; autoUpdater.checkForUpdates().catch(() => say(L('updCheckFail'))); } },
     { type: 'separator' },
-    { label: 'Wyloguj ze Spotify', click: () => { tokens = null; delete store.refresh; saveStore(); win.webContents.send('auth:loggedOut'); } },
-    { label: 'Zamknij', click: () => app.quit() },
+    { label: L('trayLogout'), click: () => { tokens = null; delete store.refresh; saveStore(); win.webContents.send('auth:loggedOut'); } },
+    { label: L('trayQuit'), click: () => app.quit() },
   ]));
 }
 
@@ -657,6 +661,7 @@ if (!app.requestSingleInstanceLock()) {
   app.on('second-instance', () => { if (win) { win.show(); win.focus(); } });
   app.whenReady().then(() => {
     loadStore();
+    I18N.setLang(getSettings().lang);
     loadTokens();
     createWindow();
     tray = new Tray(nativeImage.createFromPath(path.join(__dirname, 'assets', 'icon.png')).resize({ width: 16, height: 16 }));
