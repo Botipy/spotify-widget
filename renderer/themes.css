@@ -451,3 +451,11 @@ html[data-theme="neon"] .pm.on { box-shadow: 0 0 10px rgba(38, 230, 255, .7); }
 /* Pomodoro: płaskie style bez poświaty wokół pierścienia (nie pasuje do nich i odsłaniała krawędzie) */
 html[data-theme="retro"] .ring .fg, html[data-theme="gameboy"] .ring .fg, html[data-theme="win98"] .ring .fg,
 html[data-theme="glass"] .ring .fg, html[data-theme="y2k"] .ring .fg, html[data-theme="sakura"] .ring .fg { filter: none; }
+
+/* terminal: przyciski tekstowe nie zawijają się (w układzie minimalistycznym było za ciasno: "[ <" / "]") */
+html[data-theme="terminal"] #prev, html[data-theme="terminal"] #next, html[data-theme="terminal"] #toggle { white-space: nowrap; flex-shrink: 0; }
+html[data-theme="terminal"][data-layout="compact"] .ic.big, html[data-theme="terminal"][data-layout="compact"] .play { padding: 2px 3px; font-size: 13px; }
+html[data-theme="terminal"][data-layout="compact"] #prev::before { content: '[<]'; }
+html[data-theme="terminal"][data-layout="compact"] #next::before { content: '[>]'; }
+html[data-theme="terminal"][data-layout="compact"] #toggle::before { content: '[>]'; }
+html[data-theme="terminal"][data-layout="compact"] #card.playing #toggle::before { content: '[II]'; }
