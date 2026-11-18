@@ -504,8 +504,8 @@ $('heart').onclick = async () => {
 // ---------- Napisy: zsynchronizowane teksty (opcjonalne, domyślnie wyłączone) ----------
 // Linijka napisów zastępuje wykonawcę: wjeżdża z rozmyciem, wypełnia się kolorem akcentu w rytm utworu,
 // a zbyt długa linijka sama się przesuwa. Gdy utwór nie ma napisów, widać wykonawcę jak zwykle.
-let lyricsOn = false, lyrics = { uri: null, lines: null }, lyShown = false, lyIdx = -2, lyEl = null, lyLit = -1, lyScroll = false;
-const LY_DEMO_TEXT = ['Synced lyrics, line by line', 'Words light up one by one in time with the song', 'Long lines wrap onto two rows instead of being cut', '', 'Works in every style and layout'];
+let lyricsOn = false, lyrics = { uri: null, lines: null }, lyShown = false, lyIdx = -2, lyEl = null, lyLit = -1, lyChunks = null, lyChunkIdx = -1, lyLayout = "";
+const LY_DEMO_TEXT = ['Synced lyrics, line by line', 'Words light up one by one in time with the song', 'Long lines are split into short parts that follow the song', '', 'Works in every style and layout'];
 const LY_DEMO = Array.from({ length: 60 }, (_, i) => ({ t: i * 4000, text: LY_DEMO_TEXT[i % LY_DEMO_TEXT.length] }));
 function curPos() { return Math.min(st.duration, st.progress + (st.playing ? Date.now() - stAt : 0)); }
 async function ensureLyrics() {
@@ -521,13 +521,41 @@ function lyIndexAt(lines, pos) { // ostatnia linijka z czasem <= pos (wyszukiwan
   while (lo <= hi) { const m = (lo + hi) >> 1; if (lines[m].t <= pos) { ans = m; lo = m + 1; } else hi = m - 1; }
   return ans;
 }
-// Dopasowanie rozmiaru: linijka może zająć 2 wiersze; jeśli się nie mieści, zmniejszamy czcionkę (nigdy nie ucinamy po cichu).
-function fitLyric(el) {
-  for (const px of [11.5, 10.5, 9.8]) {
-    el.style.fontSize = px + 'px';
-    if (el.scrollHeight <= el.clientHeight + 1) return 0;
+// Napisy jak w filmie: długa linijka dzieli się na krótkie części, które mieszczą się w dostępnym miejscu
+// (1 wiersz w układzie minimalistycznym, 2 w standardowym) i zmieniają się w rytm utworu. Nic nie jest ucinane.
+function lyMaxLines() { return document.documentElement.dataset.layout === 'compact' ? 1 : 2; }
+function lyPaginate(text) {
+  const a = $('artist');
+  if (a.clientWidth < 40) return [[text]];
+  const m = a.cloneNode(false);
+  m.removeAttribute('id');
+  m.className = 'artist ly';
+  m.style.cssText = 'position:absolute;visibility:hidden;pointer-events:none;left:-9999px;top:0;width:' + a.clientWidth + 'px;max-height:none;white-space:normal;height:auto;';
+  a.parentNode.appendChild(m);
+  m.textContent = 'Mg';
+  const lineH = m.scrollHeight || 14;
+  const maxH = lineH * lyMaxLines() + 1;
+  const chunks = [];
+  let cur = [];
+  for (const w of text.split(/\s+/).filter(Boolean)) {
+    m.textContent = cur.concat(w).join(' ');
+    if (m.scrollHeight > maxH && cur.length) { chunks.push(cur); cur = [w]; } else cur.push(w);
   }
-  return el.scrollHeight - el.clientHeight; // dalej za długie: linijka przewinie się w pionie w rytm utworu
+  if (cur.length) chunks.push(cur);
+  m.remove();
+  return chunks.length ? chunks : [[text]];
+}
+function lyBuild(words) {
+  const el = document.createElement('span');
+  el.className = 'ly-line';
+  words.forEach((w, i) => {
+    const sp = document.createElement('span');
+    sp.className = 'w';
+    sp.textContent = w;
+    el.append(sp);
+    if (i < words.length - 1) el.append(' ');
+  });
+  return el;
 }
 function lyricLoop() {
   requestAnimationFrame(lyricLoop);
@@ -538,38 +566,36 @@ function lyricLoop() {
   let pos = 0, idx = -1;
   if (want) { pos = curPos() + 200; idx = lyIndexAt(lines, pos); if (idx < 0) want = false; }
   if (!want) {
-    if (lyShown) { lyShown = false; lyIdx = -2; lyEl = null; a.style.fontSize = ''; $('card').classList.remove('ly-on'); applyNotice(); }
+    if (lyShown) { lyShown = false; lyIdx = -2; lyEl = null; lyChunks = null; $('card').classList.remove('ly-on'); applyNotice(); }
     return;
   }
-  if (!lyShown || idx !== lyIdx || !lyEl || !lyEl.isConnected) {
-    lyShown = true; lyIdx = idx; lyLit = -1;
-    const ln = lines[idx];
-    const el = document.createElement('span');
-    el.className = 'ly-line' + (ln.text ? '' : ' gap');
-    if (ln.text) {
-      ln.text.split(/\s+/).forEach((w, i, arr) => {
-        const sp = document.createElement('span');
-        sp.className = 'w';
-        sp.textContent = w;
-        el.append(sp);
-        if (i < arr.length - 1) el.append(' ');
-      });
-    } else el.textContent = '♪';
+  const ln = lines[idx], next = lines[idx + 1];
+  if (!lyShown || idx !== lyIdx || !lyChunks || lyLayout !== document.documentElement.dataset.layout) {
+    lyShown = true; lyIdx = idx; lyLayout = document.documentElement.dataset.layout; lyChunkIdx = -1; lyLit = -1; lyEl = null;
+    lyChunks = ln.text ? lyPaginate(ln.text) : null;
     a.classList.add('ly'); a.classList.remove('notice', 'bad');
     $('card').classList.add('ly-on');
-    a.style.fontSize = '';
-    a.replaceChildren(el);
-    lyEl = el;
-    const over = fitLyric(a);
-    el.style.setProperty('--oy', (over > 1 ? -over : 0) + 'px');
-    lyScroll = over > 1;
+    if (!lyChunks) { const g = document.createElement('span'); g.className = 'ly-line gap'; g.textContent = '♪'; a.replaceChildren(g); lyChunks = [['♪']]; lyChunkIdx = 0; lyEl = g; return; }
   }
-  const ln = lines[idx], next = lines[idx + 1];
+  if (lyChunks.length === 1 && lyChunks[0][0] === '♪') return; // przerwa instrumentalna
   const span = next ? Math.min(next.t - ln.t, Math.max(1800, ln.text.length * 85)) : 4000;
-  const p = Math.max(0, Math.min(1, (pos - ln.t) / span));
-  if (lyScroll) lyEl.style.setProperty('--p', String(p));
+  const p = Math.max(0, Math.min(0.9999, (pos - ln.t) / span));
+  // która część: proporcjonalnie do liczby znaków
+  const sizes = lyChunks.map((c) => c.join(' ').length);
+  const total = sizes.reduce((x, y) => x + y, 0) || 1;
+  let acc = 0, ci = 0, local = 0;
+  for (let i = 0; i < sizes.length; i++) {
+    const end = (acc + sizes[i]) / total;
+    if (p < end || i === sizes.length - 1) { ci = i; local = Math.max(0, Math.min(1, (p - acc / total) / (sizes[i] / total))); break; }
+    acc += sizes[i];
+  }
+  if (ci !== lyChunkIdx || !lyEl || !lyEl.isConnected) {
+    lyChunkIdx = ci; lyLit = -1;
+    lyEl = lyBuild(lyChunks[ci]);
+    a.replaceChildren(lyEl);
+  }
   const words = lyEl.querySelectorAll('.w');
-  const lit = words.length ? Math.min(words.length, Math.floor(p * words.length) + 1) : 0;
+  const lit = Math.min(words.length, Math.floor(local * words.length) + 1);
   if (lit !== lyLit) { lyLit = lit; words.forEach((w, i) => w.classList.toggle('on', i < lit)); }
 }
 requestAnimationFrame(lyricLoop);
