@@ -414,3 +414,15 @@ html[data-layout="compact"] #pomo .ic.big { width: 32px; height: 32px; }
 
 /* pierścień: poświata nie może być przycinana do prostokąta elementu SVG (widać było proste krawędzie) */
 .ring svg { overflow: visible; }
+
+/* ---------- napisy (linijka zamiast wykonawcy) ---------- */
+#card .artist.ly { color: transparent; }
+.ly-line {
+  display: inline-block; white-space: nowrap; font-weight: 600; letter-spacing: .01em;
+  background: linear-gradient(90deg, var(--accent) calc(var(--p, 0) * 100% - 6%), var(--text-dim) calc(var(--p, 0) * 100% + 6%));
+  -webkit-background-clip: text; background-clip: text; color: transparent;
+  transform: translateX(calc(var(--shift, 0px) * var(--p, 0)));
+  animation: lyIn .34s cubic-bezier(.2, .8, .2, 1) both;
+}
+.ly-line.gap { opacity: .55; letter-spacing: .3em; }
+@keyframes lyIn { from { opacity: 0; translate: 0 7px; filter: blur(3px); } to { opacity: 1; translate: 0 0; filter: blur(0); } }

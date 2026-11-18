@@ -24,7 +24,7 @@ const SIZES = { standard: { w: 300, h: 168 }, compact: { w: 340, h: 112 } };
 const THEMES = ['liquid', 'retro', 'terminal', 'gameboy', 'neon', 'vaporwave', 'win98', 'winamp', 'glass', 'y2k', 'sakura', 'higanbana'];
 const I18N = require('./renderer/i18n.js');
 const L = I18N.t;
-const getSettings = () => ({ theme: 'liquid', layout: 'standard', lang: 'en', ...((typeof store !== 'undefined' && store.settings) || {}) });
+const getSettings = () => ({ theme: 'liquid', layout: 'standard', lang: 'en', lyrics: false, ...((typeof store !== 'undefined' && store.settings) || {}) });
 const curSize = () => SIZES[getSettings().layout] || SIZES.standard;
 
 let win, tray;
@@ -189,6 +189,8 @@ function simplifyState(d) {
     playing: !!d.is_playing,
     title: it.name,
     artist: (it.artists || []).map((a) => a.name).join(', ') || (it.show && it.show.publisher) || '',
+    artist1: (it.artists && it.artists[0] && it.artists[0].name) || '', // pierwszy wykonawca (do wyszukiwania napisów)
+    album: (it.album && it.album.name) || '',
     art: imgs.length ? imgs[0].url : null,
     duration: it.duration_ms,
     progress: d.progress_ms || 0,
@@ -486,6 +488,7 @@ ipcMain.handle('settings:set', (_e, patch) => {
   if (patch && THEMES.includes(patch.theme)) next.theme = patch.theme;
   if (patch && SIZES[patch.layout]) next.layout = patch.layout;
   if (patch && I18N.langs.includes(patch.lang)) next.lang = patch.lang;
+  if (patch && typeof patch.lyrics === 'boolean') next.lyrics = patch.lyrics;
   store.settings = next;
   saveStore();
   if (next.layout !== cur.layout) applyLayoutSize();
@@ -494,6 +497,61 @@ ipcMain.handle('settings:set', (_e, patch) => {
   return next;
 });
 ipcMain.handle('settings:open', () => openSettings());
+
+// ---------- Napisy (zsynchronizowane teksty z LRCLIB; tylko gdy włączone w ustawieniach) ----------
+// Wysyłamy do lrclib.net wyłącznie tytuł, wykonawcę, album i długość utworu (bez żadnych danych konta).
+const lyricsCache = new Map();
+function parseLrc(s) {
+  const out = [];
+  for (const line of String(s).split(/\r?\n/)) {
+    const ts = [...line.matchAll(/\[(\d+):(\d+(?:\.\d+)?)\]/g)];
+    if (!ts.length) continue;
+    const text = line.replace(/\[[^\]]*\]/g, '').trim();
+    for (const m of ts) out.push({ t: Math.round((Number(m[1]) * 60 + Number(m[2])) * 1000), text });
+  }
+  return out.sort((a, b) => a.t - b.t);
+}
+async function lrclib(pathAndQuery) {
+  const ac = new AbortController();
+  const to = setTimeout(() => ac.abort(), 8000);
+  try {
+    const r = await fetch('https://lrclib.net/api/' + pathAndQuery, { signal: ac.signal, headers: { 'User-Agent': 'Spotify-Widget (https://github.com/Botipy/spotify-widget)' } });
+    if (!r.ok) return { status: r.status };
+    return { status: 200, data: await r.json() };
+  } finally { clearTimeout(to); }
+}
+async function fetchLyrics(q) {
+  const dur = Math.round((q.durationMs || 0) / 1000);
+  const artist = q.artist1 || q.artist || '';
+  let rec = null;
+  if (q.album && dur) {
+    const r = await lrclib('get?' + new URLSearchParams({ track_name: q.title, artist_name: artist, album_name: q.album, duration: String(dur) }));
+    if (r.status === 200 && r.data && r.data.syncedLyrics) rec = r.data;
+  }
+  const cleaned = q.title.replace(/\s*[-–(\[].*$/, '').trim();
+  for (const name of [q.title, cleaned]) {
+    if (rec || !name) continue;
+    const r = await lrclib('search?' + new URLSearchParams({ track_name: name, artist_name: artist }));
+    if (r.status === 200 && Array.isArray(r.data)) {
+      const c = r.data.filter((x) => x.syncedLyrics && (!dur || Math.abs((x.duration || 0) - dur) <= 4));
+      c.sort((a, b) => Math.abs((a.duration || 0) - dur) - Math.abs((b.duration || 0) - dur));
+      rec = c[0] || null;
+    }
+  }
+  if (!rec) return { ok: false, notFound: true };
+  const lines = parseLrc(rec.syncedLyrics);
+  return lines.length ? { ok: true, lines } : { ok: false, notFound: true };
+}
+ipcMain.handle('lyrics:get', async (_e, q) => {
+  if (!getSettings().lyrics || !q || !q.title) return { ok: false };
+  const key = q.uri || (q.artist + '|' + q.title);
+  if (lyricsCache.has(key)) return lyricsCache.get(key);
+  let out;
+  try { out = await fetchLyrics(q); } catch { return { ok: false }; } // błąd sieci: bez cache, spróbujemy przy następnym utworze
+  lyricsCache.set(key, out);
+  if (lyricsCache.size > 80) lyricsCache.delete(lyricsCache.keys().next().value);
+  return out;
+});
 
 // ---------- Ustawienia aplikacji (zakładki Zachowanie i System w panelu; te same opcje są w menu zasobnika) ----------
 ipcMain.handle('app:get', () => ({

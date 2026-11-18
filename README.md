@@ -28,6 +28,7 @@ and **12 visual presets in 2 layouts**. It lives in the system tray, starts with
 - **Like button (♥)**: adds/removes the current track from your Liked Songs.
 - **12 styles × 2 layouts** (standard and minimal): Liquid Glass, Retro, Terminal, Game Boy, Neon, Vaporwave, Win98, Winamp, Glass, Y2K, Sakura, Higanbana.
 - **Pomodoro timer** that runs in the background, with presets (25/5, 45/15, 50/10, 90/20), sounds and optional focus music.
+- **Synced lyrics** (optional, off by default): the current line of the song replaces the artist line with a soft animation, fills with the accent colour in time with the music and scrolls when it is too long. Lyrics come from the free [LRCLIB](https://lrclib.net) service, which receives only the track name, artist, album and length. Turn it on in *Settings → Behavior*.
 - **English and Polish** interface (switch it in *Settings → Behavior*).
 - **Tray icon**, always on top, launch with Windows, automatic updates from GitHub Releases.
 
@@ -137,6 +138,7 @@ Siedzi w zasobniku, startuje z Windowsem i sama się aktualizuje.
 - **Serduszko (♥)**: dodaje/usuwa bieżący utwór z polubionych.
 - **12 stylów × 2 układy** (standardowy i minimalistyczny): Liquid Glass, Retro, Terminal, Game Boy, Neon, Vaporwave, Win98, Winamp, Glass, Y2K, Sakura, Higanbana.
 - **Timer Pomodoro** działający w tle, z presetami (25/5, 45/15, 50/10, 90/20), dźwiękami i opcjonalną muzyką do pracy.
+- **Napisy do utworów** (opcjonalne, domyślnie wyłączone): aktualna linijka piosenki zastępuje wykonawcę, delikatnie się animuje, wypełnia kolorem akcentu w rytm muzyki i przesuwa się, gdy jest za długa. Teksty pochodzą z darmowej usługi [LRCLIB](https://lrclib.net), która dostaje tylko tytuł, wykonawcę, album i długość utworu. Włączysz je w *Ustawienia → Zachowanie*.
 - **Interfejs po angielsku i polsku** (przełączasz w *Ustawienia → Zachowanie*).
 - **Ikona w zasobniku**, zawsze na wierzchu, start z Windowsem, autoaktualizacje z GitHub Releases.
 

@@ -21,6 +21,7 @@ contextBridge.exposeInMainWorld('sp', {
   playlists: call('playlists:get'),
   playPlaylist: call('playlists:play'),
   playlistTracks: call('playlists:tracks'),
+  lyricsGet: call('lyrics:get'),
   getSettings: call('settings:get'),
   setSettings: call('settings:set'),
   openSettings: call('settings:open'),

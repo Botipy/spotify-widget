@@ -29,7 +29,7 @@ function build() {
     ifr.width = sz.w; ifr.height = sz.h;
     ifr.style.transform = `scale(${scale})`;
     const extra = new URLSearchParams(location.search); // ?title=..&artist=.. (do testów długich tekstów)
-    ifr.src = `index.html?preview=1&theme=${id}&layout=${cur.layout}&mode=${mode}&lang=${cur.lang || 'en'}` +
+    ifr.src = `index.html?preview=1&theme=${id}&layout=${cur.layout}&mode=${mode}&lang=${cur.lang || 'en'}&lyrics=${cur.lyrics ? 1 : 0}` +
       (extra.get('title') ? '&title=' + encodeURIComponent(extra.get('title')) : '') +
       (extra.get('artist') ? '&artist=' + encodeURIComponent(extra.get('artist')) : '') +
       (extra.get('dur') ? '&dur=' + encodeURIComponent(extra.get('dur')) : '') + (extra.get('pos') ? '&pos=' + encodeURIComponent(extra.get('pos')) : '');
@@ -53,18 +53,21 @@ function markSelection() {
   document.querySelectorAll('#layoutSeg button').forEach((b) => b.classList.toggle('on', b.dataset.layout === cur.layout));
   document.querySelectorAll('#modeSeg button').forEach((b) => b.classList.toggle('on', b.dataset.mode === mode));
   document.querySelectorAll('#langSeg button').forEach((b) => b.classList.toggle('on', b.dataset.lang === (cur.lang || 'en')));
+  document.querySelectorAll('.sw[data-set]').forEach((c) => { c.checked = !!cur[c.dataset.set]; });
 }
 
 document.querySelectorAll('#layoutSeg button').forEach((b) => { b.onclick = () => sp.setSettings({ layout: b.dataset.layout }); });
+document.querySelectorAll('.sw[data-set]').forEach((c) => { c.onchange = () => sp.setSettings({ [c.dataset.set]: c.checked }); });
 document.querySelectorAll('#langSeg button').forEach((b) => { b.onclick = () => sp.setSettings({ lang: b.dataset.lang }); });
 document.querySelectorAll('#modeSeg button').forEach((b) => { b.onclick = () => { mode = b.dataset.mode; build(); markSelection(); }; });
 
 sp.onSettings((s) => {
   const layoutChanged = s.layout !== cur.layout;
   const langChanged = (s.lang || 'en') !== (cur.lang || 'en');
+  const lyricsChanged = !!s.lyrics !== !!cur.lyrics;
   cur = s;
   if (langChanged) relang();
-  else if (layoutChanged) build();
+  else if (layoutChanged || lyricsChanged) build();
   markSelection();
 });
 

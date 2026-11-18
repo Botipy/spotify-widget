@@ -11,7 +11,7 @@ if (!window.sp) {
     onLoggedOut() {}, onUpdate() {}, onSettings() {},
     getSettings: async () => ({ theme: 'liquid', layout: 'standard' }), setSettings: noop, openSettings: noop,
     state: async () => ({ auth: true, state: null }), toggle: noop, next: noop, prev: noop, shuffle: noop, seek: noop, volume: noop,
-    libContains: noop, libSet: noop, relogin: noop, playlistTracks: noop,
+    libContains: noop, libSet: noop, lyricsGet: noop, relogin: noop, playlistTracks: noop,
     pomoGet: async () => null, pomoCmd: noop, pomoSet: noop, pomoSuggest: async () => [], onPomo() {}, onPomoSound() {},
     playlists: async () => ({ ok: true, items: [] }), playPlaylist: noop, hide: noop, quit: noop, openUrl: noop,
   };
@@ -30,6 +30,7 @@ function relocalize() { // po zmianie języka: odśwież teksty dynamiczne
 function applyLook(s) {
   const root = document.documentElement;
   if (s.lang && s.lang !== I18N.getLang()) { I18N.setLang(s.lang); I18N.apply(); relocalize(); }
+  if (typeof s.lyrics === 'boolean' && s.lyrics !== lyricsOn) { lyricsOn = s.lyrics; if (lyricsOn) ensureLyrics(); }
   root.dataset.theme = s.theme;
   root.dataset.layout = s.layout;
   if (!COVER_ACCENT.has(s.theme)) {
@@ -68,7 +69,10 @@ function applyNotice() {
   const on = !!noticeText;
   a.classList.toggle('notice', on);
   a.classList.toggle('bad', on && noticeBad);
-  a.textContent = on ? noticeText : (st ? st.artist : L('idleArtist'));
+  if (on || !lyShown) { // gdy leci linijka napisów, nie nadpisujemy jej (pętla napisów sama przywróci wykonawcę)
+    a.classList.remove('ly');
+    a.textContent = on ? noticeText : (st ? st.artist : L('idleArtist'));
+  }
   if (plOpen) {
     const n = $('plName');
     n.textContent = on ? noticeText : nameHint();
@@ -199,6 +203,7 @@ function render() {
   }
   setTitle(st.title);
   applyNotice();
+  ensureLyrics();
   $('card').title = st.device ? L('deviceLbl', { d: st.device }) : '';
   if (st.art && $('art').dataset.src !== st.art) {
     $('art').src = st.art;
@@ -496,6 +501,53 @@ $('heart').onclick = async () => {
   flash(want ? L('likedAdded') : L('likedRemoved'), true);
 };
 
+// ---------- Napisy: zsynchronizowane teksty (opcjonalne, domyślnie wyłączone) ----------
+// Linijka napisów zastępuje wykonawcę: wjeżdża z rozmyciem, wypełnia się kolorem akcentu w rytm utworu,
+// a zbyt długa linijka sama się przesuwa. Gdy utwór nie ma napisów, widać wykonawcę jak zwykle.
+let lyricsOn = false, lyrics = { uri: null, lines: null }, lyShown = false, lyIdx = -2, lyEl = null;
+const LY_DEMO_TEXT = ['Synced lyrics, line by line', 'The current line fills with colour', 'Long lines slowly scroll along as they are sung', '', 'Works in every style and layout'];
+const LY_DEMO = Array.from({ length: 60 }, (_, i) => ({ t: i * 4000, text: LY_DEMO_TEXT[i % LY_DEMO_TEXT.length] }));
+function curPos() { return Math.min(st.duration, st.progress + (st.playing ? Date.now() - stAt : 0)); }
+async function ensureLyrics() {
+  if (!lyricsOn || !st || st.kind !== 'track' || !st.uri || lyrics.uri === st.uri) return;
+  const uri = st.uri;
+  lyrics = { uri, lines: null };
+  let r = null;
+  try { r = await sp.lyricsGet({ uri, title: st.title, artist: st.artist, artist1: st.artist1, album: st.album, durationMs: st.duration }); } catch {}
+  if (lyrics.uri === uri) lyrics.lines = r && r.ok && r.lines && r.lines.length ? r.lines : null;
+}
+function lyIndexAt(lines, pos) { // ostatnia linijka z czasem <= pos (wyszukiwanie binarne)
+  let lo = 0, hi = lines.length - 1, ans = -1;
+  while (lo <= hi) { const m = (lo + hi) >> 1; if (lines[m].t <= pos) { ans = m; lo = m + 1; } else hi = m - 1; }
+  return ans;
+}
+function lyricLoop() {
+  requestAnimationFrame(lyricLoop);
+  if (!lyricsOn && !lyShown) return;
+  const a = $('artist');
+  const lines = lyrics.lines;
+  let want = lyricsOn && !noticeText && !!st && !!lines && lyrics.uri === st.uri;
+  let pos = 0, idx = -1;
+  if (want) { pos = curPos() + 200; idx = lyIndexAt(lines, pos); if (idx < 0) want = false; }
+  if (!want) { if (lyShown) { lyShown = false; lyIdx = -2; lyEl = null; applyNotice(); } return; }
+  if (!lyShown || idx !== lyIdx || !lyEl || !lyEl.isConnected) {
+    lyShown = true; lyIdx = idx;
+    const ln = lines[idx];
+    const el = document.createElement('span');
+    el.className = 'ly-line' + (ln.text ? '' : ' gap');
+    el.textContent = ln.text || '♪';
+    a.classList.add('ly'); a.classList.remove('notice', 'bad');
+    a.replaceChildren(el);
+    lyEl = el;
+    const over = el.scrollWidth - a.clientWidth;
+    el.style.setProperty('--shift', (over > 4 ? -(over + 6) : 0) + 'px');
+  }
+  const ln = lines[idx], next = lines[idx + 1];
+  const span = next ? Math.min(next.t - ln.t, Math.max(1800, ln.text.length * 85)) : 4000;
+  lyEl.style.setProperty('--p', String(Math.max(0, Math.min(1, (pos - ln.t) / span))));
+}
+requestAnimationFrame(lyricLoop);
+
 // ---------- Pomodoro: widok timera ----------
 let pomoSt = null, pomoAt = 0, pomoView = false;
 const RING_C = 2 * Math.PI * 44;
@@ -582,6 +634,7 @@ function startPreview() {
   x.fillStyle = 'rgba(0,0,0,.25)'; x.beginPath(); x.arc(100, 100, 18, 0, 7); x.fill();
   st = { playing: true, title: qs.get('title') || L('exTrack'), artist: qs.get('artist') || L('exArtist'), art: c.toDataURL(), duration: Number(qs.get('dur')) || 157000, progress: Number(qs.get('pos')) || 41000, shuffle: true, volume: 60, device: null, context: null, kind: 'track', uri: 'spotify:track:preview' };
   savedCache.set('spotify:track:preview', true); // w podglądzie serce jest wypełnione
+  if (qs.get('lyrics') === '1') { lyricsOn = true; lyrics = { uri: st.uri, lines: LY_DEMO }; } // podgląd napisów (atrapa)
   stAt = Date.now();
   if (qs.get('anim') !== '1') setInterval(() => { stAt = Date.now(); }, 150); // zamrożony postęp (anim=1: postęp biegnie, do GIF-ów)
   render();
