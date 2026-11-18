@@ -590,7 +590,7 @@ function openSettings() {
   if (settingsWin && !settingsWin.isDestroyed()) { settingsWin.show(); settingsWin.focus(); return; }
   settingsWin = new BrowserWindow({
     width: 1020, height: 760, minWidth: 820, minHeight: 520,
-    title: L('settingsTitle'), backgroundColor: '#0a0912', autoHideMenuBar: true,
+    title: L('settingsTitle'), backgroundColor: '#0c0916', autoHideMenuBar: true,
     icon: path.join(__dirname, 'assets', 'icon.png'),
     webPreferences: { preload: path.join(__dirname, 'preload.js'), contextIsolation: true, nodeIntegration: false },
   });

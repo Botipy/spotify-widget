@@ -13,7 +13,7 @@ const grid = document.getElementById('grid');
 function build() {
   grid.innerHTML = '';
   const sz = SIZES[cur.layout];
-  const scale = cur.layout === 'standard' ? 0.98 : 0.92;
+  const scale = cur.layout === 'standard' ? 0.72 : 0.64;
   for (const [id, label] of THEMES) {
     const card = document.createElement('button');
     card.className = 'card' + (id === cur.theme ? ' sel' : '');
@@ -102,6 +102,34 @@ function showTab(name) {
   if (name === 'pomodoro') loadPomo();
 }
 document.querySelectorAll('#tabs button').forEach((b) => { b.onclick = () => showTab(b.dataset.tab); });
+
+// ---------- Wyszukiwarka ustawień (Ctrl K) i skróty 1-4 ----------
+const sq = document.getElementById('sq');
+function applySearch() {
+  const v = sq.value.trim().toLowerCase();
+  const rows = document.querySelectorAll('.tab .row, .tab .controls .group');
+  document.getElementById('grid').hidden = !!v;
+  document.querySelectorAll('.tab h3, .tab .lead, .tab .chips, .tab .controls').forEach((e) => { e.hidden = !!v; });
+  if (!v) { rows.forEach((r) => { r.hidden = false; }); document.getElementById('noRes').hidden = true; document.querySelectorAll('.tab .controls').forEach((e) => { e.hidden = false; }); return; }
+  let first = null;
+  rows.forEach((r) => {
+    const hit = r.textContent.toLowerCase().includes(v);
+    r.hidden = !hit;
+    if (hit && !first) first = r.closest('.tab').id.replace('tab-', '');
+  });
+  document.querySelectorAll('.tab .controls').forEach((c) => { c.hidden = ![...c.querySelectorAll('.group')].some((g) => !g.hidden); });
+  document.getElementById('noRes').hidden = !!first;
+  if (first) showTab(first, true);
+}
+sq.addEventListener('input', applySearch);
+sq.addEventListener('keydown', (e) => { if (e.key === 'Escape') { sq.value = ''; applySearch(); sq.blur(); } });
+document.addEventListener('keydown', (e) => {
+  if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') { e.preventDefault(); sq.focus(); sq.select(); return; }
+  const tag = (e.target.tagName || '').toLowerCase();
+  if (['input', 'select', 'textarea'].includes(tag) || e.ctrlKey || e.altKey || e.metaKey) return;
+  const i = Number(e.key);
+  if (i >= 1 && i <= TABS.length) { sq.value = ''; applySearch(); showTab(TABS[i - 1]); }
+});
 
 // ---------- Zachowanie i System (te same opcje są też w menu zasobnika) ----------
 const $ = (id) => document.getElementById(id);
