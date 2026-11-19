@@ -504,7 +504,7 @@ $('heart').onclick = async () => {
 // ---------- Napisy: zsynchronizowane teksty (opcjonalne, domyślnie wyłączone) ----------
 // Linijka napisów zastępuje wykonawcę: wjeżdża z rozmyciem, wypełnia się kolorem akcentu w rytm utworu,
 // a zbyt długa linijka sama się przesuwa. Gdy utwór nie ma napisów, widać wykonawcę jak zwykle.
-let lyricsOn = false, lyrics = { uri: null, lines: null }, lyShown = false, lyIdx = -2, lyEl = null, lyLit = -1, lyChunks = null, lyChunkIdx = -1, lyLayout = "";
+let lyricsOn = false, lyrics = { uri: null, lines: null }, lyShown = false, lyIdx = -2, lyEl = null, lyLit = -1, lyChunks = null, lyChunkIdx = -1, lyLayout = "", lyGap = false;
 const LY_DEMO_TEXT = ['Synced lyrics, line by line', 'Words light up one by one in time with the song', 'Long lines are split into short parts that follow the song', '', 'Works in every style and layout'];
 const LY_DEMO = Array.from({ length: 60 }, (_, i) => ({ t: i * 4000, text: LY_DEMO_TEXT[i % LY_DEMO_TEXT.length] }));
 function curPos() { return Math.min(st.duration, st.progress + (st.playing ? Date.now() - stAt : 0)); }
@@ -573,12 +573,13 @@ function lyricLoop() {
   const ln = lines[idx], next = lines[idx + 1];
   if (!lyShown || idx !== lyIdx || !lyChunks || lyLayout !== document.documentElement.dataset.layout) {
     lyShown = true; lyIdx = idx; lyLayout = document.documentElement.dataset.layout; lyChunkIdx = -1; lyLit = -1; lyEl = null;
-    lyChunks = ln.text ? lyPaginate(ln.text) : null;
+    lyGap = !/[\p{L}\p{N}]/u.test(ln.text || ''); // pusta linijka albo same znaki (♪, ..., -) = przerwa, nie tekst
+    lyChunks = lyGap ? null : lyPaginate(ln.text);
     a.classList.add('ly'); a.classList.remove('notice', 'bad');
     $('card').classList.add('ly-on');
     if (!lyChunks) { const g = document.createElement('span'); g.className = 'ly-line gap'; g.textContent = '♪'; a.replaceChildren(g); lyChunks = [['♪']]; lyChunkIdx = 0; lyEl = g; return; }
   }
-  if (lyChunks.length === 1 && lyChunks[0][0] === '♪') return; // przerwa instrumentalna
+  if (lyGap) return; // przerwa instrumentalna: znak ♪ już narysowany
   const span = next ? Math.min(next.t - ln.t, Math.max(1800, ln.text.length * 85)) : 4000;
   const p = Math.max(0, Math.min(0.9999, (pos - ln.t) / span));
   // która część: proporcjonalnie do liczby znaków

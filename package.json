@@ -1,7 +1,7 @@
 {
   "name": "spotify-widget",
   "productName": "Spotify Widget",
-  "version": "1.9.2",
+  "version": "1.9.3",
   "description": "Minimalistyczna nakładka Spotify na pulpit",
   "main": "main.js",
   "author": "Botipy",
