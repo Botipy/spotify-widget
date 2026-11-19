@@ -530,7 +530,8 @@ function lyPaginate(text) {
   const m = a.cloneNode(false);
   m.removeAttribute('id');
   m.className = 'artist ly';
-  m.style.cssText = 'position:absolute;visibility:hidden;pointer-events:none;left:-9999px;top:0;width:' + a.clientWidth + 'px;max-height:none;white-space:normal;height:auto;';
+  // te same parametry tekstu co w .ly-line (pogrubienie, odstępy) + 8 px zapasu, żeby ostatnie słowo nigdy nie wychodziło poza krawędź
+  m.style.cssText = 'position:absolute;visibility:hidden;pointer-events:none;left:-9999px;top:0;width:' + (a.clientWidth - 8) + 'px;max-height:none;white-space:normal;height:auto;font-weight:600;letter-spacing:.005em;';
   a.parentNode.appendChild(m);
   m.textContent = 'Mg';
   const lineH = m.scrollHeight || 14;
